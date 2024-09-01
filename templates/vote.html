@@ -7,7 +7,15 @@
 </head>
 <body>
     <h1>Cast Your Vote</h1>
-    <!-- Voting form will go here -->
+    <form action="{{ url_for('vote') }}" method="POST">
+        {% for candidate in candidates %}
+            <label>
+                <input type="radio" name="candidate" value="{{ candidate }}">
+                {{ candidate }}
+            </label><br>
+        {% endfor %}
+        <button type="submit">Submit Vote</button>
+    </form>
     <p><a href="/">Back to Home</a></p>
 </body>
 </html>
