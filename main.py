@@ -1,34 +1,29 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'  # Necessary for flashing messages
 
-# In-memory storage for votes (for demonstration purposes)
-votes = {
-    "Candidate A": 0,
-    "Candidate B": 0,
-    "Candidate C": 0,
-}
-
-@app.route("/")
-def home():
-    return render_template("index.html")
-
-@app.route("/vote", methods=["GET", "POST"])
-def vote():
+@app.route("/", methods=["GET", "POST"])
+def index():
     if request.method == "POST":
         candidate = request.form.get("candidate")
-        if candidate in votes:
-            votes[candidate] += 1
-        return redirect(url_for('results'))
-    return render_template("vote.html", candidates=votes.keys())
+        voter_id = request.form.get("voterId")
+        # Process the vote (e.g., save to a database)
+        flash("Thank you! Your vote has been successfully submitted.", "success")
+        return redirect(url_for("index"))
+
+    return render_template("index.html")
 
 @app.route("/results")
 def results():
-    return render_template("results.html", votes=votes)
-
-@app.route("/admin")
-def admin():
-    return render_template("admin.html")
+    # Mock data for voting results
+    results_data = {
+        "Candidate 1": 50,
+        "Candidate 2": 30,
+        "Candidate 3": 20
+    }
+    return render_template("results.html", results=results_data)
 
 if __name__ == "__main__":
     app.run(debug=True)
+
