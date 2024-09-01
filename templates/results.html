@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results - EveryVoter</title>
+</head>
+<body>
+    <h1>Voting Results</h1>
+    <ul>
+        {% for candidate, count in votes.items() %}
+            <li>{{ candidate }}: {{ count }} vote{{ 's' if count != 1 else '' }}</li>
+        {% endfor %}
+    </ul>
+    <p><a href="/">Back to Home</a></p>
+</body>
+</html>
