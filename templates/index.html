@@ -5,10 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cast Your Vote</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
 </head>
 <body>
+    <!-- Background layers for stars, twinkling, and shooting stars -->
+    <div class="stars"></div>
+    <div class="twinkling"></div>
+    <div class="shooting-stars"></div>
+
     <div class="container">
-        <h1 class="text-center my-4">Cast Your Vote</h1>
+        <h1 class="text-center my-4 text-light">Cast Your Vote</h1>
 
         {% if election_status == 'ongoing' %}
             <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
@@ -35,5 +41,7 @@
             <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
         </form>
     </div>
+
+    <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
 </body>
 </html>
