@@ -30,7 +30,7 @@ MAX_VOTES = 6  # Maximum number of votes allowed
 
 def get_random_candidates():
     # Generate the result from the model
-    result = model("generate six random and interesting candidates for a poll and print each candidate on a new line")
+    result = model.invoke("generate six random and interesting cowboy/cowgirl pickup lines for a poll and print each candidate on a new line")
     
     # Extract the content of the response
     content = result.content
