@@ -3,11 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EveryVoter</title>
+    <title>Cast Your Vote</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-    <h1>Welcome to EveryVoter</h1>
-    <p><a href="/vote">Cast Your Vote</a></p>
-    <p><a href="/admin">Administrator Panel</a></p>
+    <div class="container">
+        <h1 class="text-center my-4">Cast Your Vote</h1>
+
+        {% if election_status == 'ongoing' %}
+            <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
+        {% endif %}
+
+        {% if candidates %}
+            <form method="POST" action="/">
+                <div class="row justify-content-center">
+                    {% for candidate in candidates %}
+                        <div class="col-md-4 mb-2">
+                            <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        {% endif %}
+
+        <form method="POST" action="/">
+            {% if election_status == 'ended' %}
+                <button type="submit" name="randomize" value="randomize" class="btn btn-warning btn-block mb-2">Randomize Candidates</button>
+            {% endif %}
+            <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
+        </form>
+    </div>
 </body>
 </html>
