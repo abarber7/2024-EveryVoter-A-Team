@@ -3,55 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EveryVoter - Cast Your Vote</title>
+    <title>Cast Your Vote</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+    <div class="container">
+        <h1 class="text-center my-4">Cast Your Vote</h1>
 
-<div class="container mt-5">
-    <h1 class="text-center">Cast Your Vote</h1>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="mt-4">
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}" role="alert">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            </div>
+        {% if election_status == 'ongoing' %}
+            <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
         {% endif %}
-    {% endwith %}
 
-    {% if election_status == 'ended' %}
-    <form action="/" method="POST">
-        <div class="form-group">
-            <label for="voterId">Voter ID:</label>
-            <input type="text" class="form-control" id="voterId" name="voterId" required>
-        </div>
+        {% if candidates %}
+            <form method="POST" action="/">
+                <div class="row justify-content-center">
+                    {% for candidate in candidates %}
+                        <div class="col-md-4 mb-2">
+                            <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </form>
+        {% endif %}
 
-        <div class="form-group">
-            <label for="candidate">Select Your Candidate:</label>
-            <select class="form-control" id="candidate" name="candidate" required>
-                {% for candidate in candidates %}
-                <option value="{{ candidate }}">{{ candidate }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <button type="submit" class="btn btn-primary btn-block">Submit Vote</button>
-    </form>
-    {% else %}
-    <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
-    {% endif %}
-
-    <div class="text-center mt-4">
-        <form action="/" method="POST">
-            <button name="randomize" class="btn btn-warning btn-block" {% if election_status == 'ongoing' %} disabled {% endif %}>Randomize Candidates</button>
+        <form method="POST" action="/">
+            {% if election_status == 'ended' %}
+                <button type="submit" name="randomize" value="randomize" class="btn btn-warning btn-block mb-2">Randomize Candidates</button>
+            {% endif %}
+            <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
         </form>
-        <a href="{{ url_for('results') }}" class="btn btn-info btn-block mt-3">View Current Results</a>
     </div>
-</div>
-
 </body>
 </html>
