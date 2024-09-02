@@ -44,3 +44,5 @@ Next, create a `.env` file in the root of the repository and add the following e
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
+To remove squiggly warning lines from files where LangChain is used, run 'poetry shell' and copy the virtual environment path that appears in the console(e.g. C:\Users\YOURUSER\AppData\Local\pypoetry\Cache\virtualenvs\everyvoter-a-team-7zgR628F-py3.12). This is the interpreter path. Add it to your VS Code settings: "Enter interpreter path" and paste the path.
+
