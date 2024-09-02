@@ -44,5 +44,3 @@ Next, create a `.env` file in the root of the repository and add the following e
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
-If you encounter any issues, ensure that Python and Poetry are installed correctly, the environment variables are set correctly in your `.env` file, and you are using the correct version of Python as specified in the `pyproject.toml`.
-
