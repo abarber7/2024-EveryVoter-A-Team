@@ -29,3 +29,20 @@ EveryVoter implements logic to declare a winner once a candidate reaches the req
 ---
 
 EveryVoter is developed with a focus on the universe of potential voters, everywhere.
+
+## Steps to Run the Application
+
+This project is built using Python and managed with Poetry. Below are the instructions for setting up your development environment.
+
+To install Poetry on Linux, run the following command in your terminal: `curl -sSL https://install.python-poetry.org | python3 -`. To install Poetry on Windows, open PowerShell and run: `(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -`.
+
+After installing Poetry, you need to ensure that the Poetry executable is in your system's PATH. For Linux, add the following line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file: `export PATH="$HOME/.local/bin:$PATH"`. Then, reload your shell configuration by running: `source ~/.bashrc` or, if you're using Zsh, `source ~/.zshrc`. On Windows, Poetry is usually added to the PATH automatically. If it isn’t, you can add it manually: 1. Open the Start menu, search for "Environment Variables", and select "Edit the system environment variables". 2. In the System Properties window, click on the "Environment Variables" button. 3. In the Environment Variables window, find the "Path" variable under "System variables" and click "Edit". 4. Click "New" and add the path to Poetry's installation directory, usually `C:\Users\YourUsername\AppData\Roaming\Python\Scripts`.
+
+After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
+
+Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=main:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
+
+Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
+
+If you encounter any issues, ensure that Python and Poetry are installed correctly, the environment variables are set correctly in your `.env` file, and you are using the correct version of Python as specified in the `pyproject.toml`.
+
