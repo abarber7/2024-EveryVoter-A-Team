@@ -23,45 +23,33 @@
         {% endif %}
     {% endwith %}
 
+    {% if election_status == 'ended' %}
     <form action="/" method="POST">
         <div class="form-group">
             <label for="voterId">Voter ID:</label>
             <input type="text" class="form-control" id="voterId" name="voterId" required>
         </div>
+
         <div class="form-group">
-            <label for="candidate">Select Your Favorite Car:</label>
+            <label for="candidate">Select Your Candidate:</label>
             <select class="form-control" id="candidate" name="candidate" required>
-                <option value="Toyota Supra">Toyota Supra</option>
-                <option value="Nissan GT-R">Nissan GT-R</option>
-                <option value="Subaru Impreza">Subaru Impreza</option>
-                <option value="Dodge Challenger">Dodge Challenger</option>
-                <option value="Honda Civic">Honda Civic</option>
-                <option value="Ford Mustang">Ford Mustang</option>
-                <option value="Chevrolet Corvette">Chevrolet Corvette</option>
-                <option value="Toyota Camry">Toyota Camry</option>
-                <option value="Mazda RX-7">Mazda RX-7</option>
-                <option value="Hyundai Elantra">Hyundai Elantra</option>
-                <option value="Kia Sorento">Kia Sorento</option>
-                <option value="Volkswagen Passat">Volkswagen Passat</option>
-                <option value="BMW M3">BMW M3</option>
-                <option value="Mercedes-Benz C-Class">Mercedes-Benz C-Class</option>
-                <option value="Audi A4">Audi A4</option>
-                <option value="Porsche 911">Porsche 911</option>
-                <option value="Jaguar F-Type">Jaguar F-Type</option>
-                <option value="Lexus RX-450h">Lexus RX-450h</option>
-                <option value="Volkswagen Golf GTI">Volkswagen Golf GTI</option>
-                <option value="Tesla Model 3">Tesla Model 3</option>
-                <option value="Mercedes-Benz S-Class">Mercedes-Benz S-Class</option>
-                <option value="BMW X5">BMW X5</option>
-                <option value="Porsche 911 GT3">Porsche 911 GT3</option>
-                <option value="Audi A8">Audi A8</option>
+                {% for candidate in candidates %}
+                <option value="{{ candidate }}">{{ candidate }}</option>
+                {% endfor %}
             </select>
         </div>
+
         <button type="submit" class="btn btn-primary btn-block">Submit Vote</button>
     </form>
+    {% else %}
+    <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
+    {% endif %}
 
     <div class="text-center mt-4">
-        <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
+        <form action="/" method="POST">
+            <button name="randomize" class="btn btn-warning btn-block" {% if election_status == 'ongoing' %} disabled {% endif %}>Randomize Candidates</button>
+        </form>
+        <a href="{{ url_for('results') }}" class="btn btn-info btn-block mt-3">View Current Results</a>
     </div>
 </div>
 
