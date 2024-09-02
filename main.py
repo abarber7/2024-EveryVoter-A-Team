@@ -15,10 +15,16 @@ if not api_key:
 # Initialize the model with the API key
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
 
+# Default candidates
+DEFAULT_CANDIDATES = [
+    "Toyota Supra", "Nissan GT-R", "Subaru Impreza", 
+    "Dodge Challenger", "Honda Civic", "Ford Mustang"
+]
+
 # In-memory storage for votes and candidates (resets when the app restarts)
 votes = {}
 candidates = []
-election_status = 'ended'  # Initialize the election status as 'ended'
+election_status = 'not_started'  # New status for when an election is ready but not started
 
 MAX_VOTES = 6  # Maximum number of votes allowed
 
@@ -33,24 +39,43 @@ def get_random_candidates():
     # Return the first 6 candidates
     return [candidate.strip() for candidate in new_candidates][:6]
 
+def start_election():
+    global votes, election_status
+    votes = {candidate: 0 for candidate in candidates}
+    election_status = 'ongoing'
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     global candidates, votes, election_status
 
     if request.method == "POST":
         if 'randomize' in request.form:
-            if election_status == 'ended':
+            if election_status == 'not_started' or election_status == 'ended':
                 candidates = get_random_candidates()
-                votes = {candidate: 0 for candidate in candidates}
-                election_status = 'ongoing'
-                flash("Candidates have been randomized. A new election has begun.", "info")
+                flash("Candidates have been randomized. Press 'Start Election' to begin.", "info")
             else:
-                flash("The current election must end before starting a new one.", "danger")
+                flash("An election is already ongoing.", "danger")
+            return redirect(url_for("index"))
+
+        if 'start_default' in request.form:
+            if election_status == 'not_started' or election_status == 'ended':
+                candidates = DEFAULT_CANDIDATES[:]
+                flash("Default candidates have been selected. Press 'Start Election' to begin.", "info")
+            else:
+                flash("An election is already ongoing.", "danger")
+            return redirect(url_for("index"))
+
+        if 'start_election' in request.form:
+            if election_status == 'not_started' or election_status == 'ended':
+                start_election()
+                flash("The election has started.", "info")
+            else:
+                flash("An election is already ongoing.", "danger")
             return redirect(url_for("index"))
 
         total_votes = sum(votes.values())  # Calculate the total number of votes so far
 
-        if total_votes < MAX_VOTES:
+        if total_votes < MAX_VOTES and election_status == 'ongoing':
             candidate = request.form.get("candidate")
             voter_id = request.form.get("voterId")
 
@@ -59,7 +84,7 @@ def index():
                 flash("Thank you! Your vote has been successfully submitted.", "success")
             else:
                 flash("Invalid candidate selected.", "danger")
-        else:
+        elif total_votes >= MAX_VOTES:
             flash("All votes have been cast. The election is now closed.", "info")
             election_status = 'ended'
 
