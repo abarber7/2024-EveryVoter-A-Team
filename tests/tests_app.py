@@ -1,6 +1,8 @@
 import unittest
 from main import app, DEFAULT_CANDIDATES, votes
 
+
+
 class ApplicationStartupTestCase(unittest.TestCase):
 
     def setUp(self):
