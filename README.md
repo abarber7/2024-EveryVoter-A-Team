@@ -40,7 +40,7 @@ After installing Poetry, you need to ensure that the Poetry executable is in you
 
 After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
 
-Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=main:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
+Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
@@ -48,3 +48,5 @@ To remove squiggly warning lines from files where LangChain is used, run `poetry
 
 To run the tests, run `python -m unittest discover tests`.
 
+For the current version, you can enter restaurant information, select Generate Restaurants, then begin the election. Vote at least 6 times to finish the election and return to the home page. 
+Alterntatively, you can select Use Default Candidates to use the default candidates.
