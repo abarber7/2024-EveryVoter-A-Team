@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from langchain.prompts import PromptTemplate
 import os
 
 app = Flask(__name__)
@@ -21,6 +22,22 @@ DEFAULT_CANDIDATES = [
     "Dodge Challenger", "Honda Civic", "Ford Mustang"
 ]
 
+# LangChain prompt template for generating restaurant candidates
+restaurant_prompt_template = PromptTemplate(
+    input_variables=["number_of_restaurants", "city", "state"],
+    template=(
+        "Generate {number_of_restaurants} interesting restaurant options in {city}, {state}."
+        " List each restaurant name on a new line.\n\n"
+        "Example output:\n"
+        "- The Blue Moon Restaurant\n"
+        "- The Red Sun Restaurant\n"
+        "- The Green Earth Restaurant\n"
+        "- The Yellow Star Restaurant\n"
+        "- The Purple Planet Restaurant\n"
+        "- The Orange Moon Restaurant"
+    )
+)
+
 # In-memory storage for votes and candidates (resets when the app restarts)
 votes = {}
 candidates = []
@@ -28,16 +45,15 @@ election_status = 'not_started'  # New status for when an election is ready but 
 
 MAX_VOTES = 6  # Maximum number of votes allowed
 
-def get_random_candidates():
-    # Generate the result from the model
-    result = model.invoke("generate six random and interesting cowboy/cowgirl pickup lines for a poll and print each candidate on a new line")
-    
-    # Extract the content of the response
-    content = result.content
-    new_candidates = content.strip().split('\n')
-    
-    # Return the first 6 candidates
-    return [candidate.strip() for candidate in new_candidates][:6]
+def get_restaurant_candidates(number_of_restaurants, city, state):
+    prompt = restaurant_prompt_template.format(
+        number_of_restaurants=number_of_restaurants, 
+        city=city, 
+        state=state
+    )
+    response = model.invoke(prompt)
+    content = response.content
+    return content.strip().split("\n")[:number_of_restaurants]
 
 def start_election():
     global votes, election_status
@@ -49,10 +65,13 @@ def index():
     global candidates, votes, election_status
 
     if request.method == "POST":
-        if 'randomize' in request.form:
+        if 'generate_restaurants' in request.form:
             if election_status == 'not_started' or election_status == 'ended':
-                candidates = get_random_candidates()
-                flash("Candidates have been randomized. Press 'Start Election' to begin.", "info")
+                city = request.form.get('city')
+                state = request.form.get('state')
+                number_of_restaurants = int(request.form.get('number_of_restaurants'))
+                candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+                flash("Restaurants have been generated. Press 'Start Election' to begin.", "info")
             else:
                 flash("An election is already ongoing.", "danger")
             return redirect(url_for("index"))
@@ -67,8 +86,11 @@ def index():
 
         if 'start_election' in request.form:
             if election_status == 'not_started' or election_status == 'ended':
-                start_election()
-                flash("The election has started.", "info")
+                if candidates:
+                    start_election()
+                    flash("The election has started.", "info")
+                else:
+                    flash("Please generate or select candidates before starting the election.", "danger")
             else:
                 flash("An election is already ongoing.", "danger")
             return redirect(url_for("index"))
@@ -77,7 +99,6 @@ def index():
 
         if total_votes < MAX_VOTES and election_status == 'ongoing':
             candidate = request.form.get("candidate")
-            voter_id = request.form.get("voterId")
 
             if candidate in votes:
                 votes[candidate] += 1
