@@ -34,12 +34,44 @@
 
         <form method="POST" action="/">
             {% if election_status == 'not_started' or election_status == 'ended' %}
-                <button type="submit" name="randomize" value="randomize" class="btn btn-warning btn-block mb-2">Randomize Candidates</button>
+                <div class="form-group">
+                    <label for="city" class="text-light">City</label>
+                    <input type="text" class="form-control mb-2" id="city" name="city">
+                </div>
+                <div class="form-group">
+                    <label for="state" class="text-light">State</label>
+                    <input type="text" class="form-control mb-2" id="state" name="state">
+                </div>
+                <div class="form-group">
+                    <label for="number" class="text-light">Number of Restaurants</label>
+                    <input type="number" class="form-control mb-2" id="number" name="number_of_restaurants" min="1">
+                </div>
+                <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
                 <button type="submit" name="start_default" value="start_default" class="btn btn-info btn-block mb-2">Use Default Candidates</button>
-                <button type="submit" name="start_election" value="start_election" class="btn btn-success btn-block mb-2">Start Election</button>
             {% endif %}
-            <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
         </form>
+
+        {% if candidates and (election_status == 'not_started' or election_status == 'ended') %}
+            <form method="POST" action="/">
+                <button type="submit" name="start_election" value="start_election" class="btn btn-success btn-block mb-2">Start Election</button>
+            </form>
+        {% endif %}
+
+        <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
+
+        {% if candidates and (election_status == 'not_started' or election_status == 'ended') %}
+            <div class="row justify-content-center mt-4">
+                {% for candidate in candidates %}
+                    <div class="col-md-4 mb-2">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title text-center">{{ candidate }}</h5>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
     </div>
 
     <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
