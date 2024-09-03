@@ -55,23 +55,10 @@
             <form method="POST" action="/">
                 <button type="submit" name="start_election" value="start_election" class="btn btn-success btn-block mb-2">Start Election</button>
             </form>
+            <p class="text-center text-light">Restaurants ready for election.</p>
         {% endif %}
 
         <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
-
-        {% if candidates and (election_status == 'not_started' or election_status == 'ended') %}
-            <div class="row justify-content-center mt-4">
-                {% for candidate in candidates %}
-                    <div class="col-md-4 mb-2">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title text-center">{{ candidate }}</h5>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
     </div>
 
     <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
