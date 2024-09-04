@@ -22,6 +22,7 @@
 
         {% if candidates and election_status == 'ongoing' %}
             <form method="POST" action="/">
+                <p class="text-center text-light">Remaining Votes: {{ remaining_votes }}</p>
                 <div class="row justify-content-center">
                     {% for candidate in candidates %}
                         <div class="col-md-4 mb-2">
@@ -45,6 +46,10 @@
                 <div class="form-group">
                     <label for="number" class="text-light">Number of Restaurants</label>
                     <input type="number" class="form-control mb-2" id="number" name="number_of_restaurants" min="1">
+                </div>
+                <div class="form-group">
+                    <label for="max_votes" class="text-light">Maximum Votes</label>
+                    <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1">
                 </div>
                 <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
                 <button type="submit" name="start_default" value="start_default" class="btn btn-info btn-block mb-2">Use Default Candidates</button>

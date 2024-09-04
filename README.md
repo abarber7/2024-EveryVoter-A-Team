@@ -36,11 +36,15 @@ This project is built using Python and managed with Poetry. Below are the instru
 
 To install Poetry on Linux, run the following command in your terminal: `curl -sSL https://install.python-poetry.org | python3 -`. To install Poetry on Windows, open PowerShell and run: `(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -`.
 
-After installing Poetry, you need to ensure that the Poetry executable is in your system's PATH. For Linux, add the following line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file: `export PATH="$HOME/.local/bin:$PATH"`. Then, reload your shell configuration by running: `source ~/.bashrc` or, if you're using Zsh, `source ~/.zshrc`. On Windows, Poetry is usually added to the PATH automatically. If it isn’t, you can add it manually: 1. Open the Start menu, search for "Environment Variables", and select "Edit the system environment variables". 2. In the System Properties window, click on the "Environment Variables" button. 3. In the Environment Variables window, find the "Path" variable under "System variables" and click "Edit". 4. Click "New" and add the path to Poetry's installation directory, usually `C:\Users\YourUsername\AppData\Roaming\Python\Scripts`.
+After installing Poetry, you need to ensure that the Poetry executable is in your system's PATH. 
+
+For Linux, add the following line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file: `export PATH="$HOME/.local/bin:$PATH"`. Then, reload your shell configuration by running: `source ~/.bashrc` or, if you're using Zsh, `source ~/.zshrc`. 
+
+On Windows, Poetry is usually added to the PATH automatically. If it isn’t, you can add it manually: 1. Open the Start menu, search for "Environment Variables", and select "Edit the system environment variables". 2. In the System Properties window, click on the "Environment Variables" button. 3. In the Environment Variables window, find the "Path" variable under "System variables" and click "Edit". 4. Click "New" and add the path to Poetry's installation directory, usually `C:\Users\YourUsername\AppData\Roaming\Python\Scripts`.
 
 After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
 
-Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=main:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
+Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
@@ -48,3 +52,5 @@ To remove squiggly warning lines from files where LangChain is used, run `poetry
 
 To run the tests, run `python -m unittest discover tests`.
 
+For the current version, you can enter restaurant information, select Generate Restaurants, then begin the election. Vote at least 6 times to finish the election and return to the home page. 
+Alterntatively, you can select Use Default Candidates to use the default candidates.
