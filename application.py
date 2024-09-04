@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
+from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
@@ -10,11 +11,30 @@ app.secret_key = 'your_secret_key'  # Necessary for flashing messages
 # Load environment variables from the .env file
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
+
+db_uri = os.getenv("DATABASE_URL")
+
+
 if not api_key:
     raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
 
+
+
+if not db_uri:
+    raise ValueError("Database URL not found. Ensure DATABASE_URL is set in your environment.")
+
 # Initialize the model with the API key
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
+
+# Configure the database
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+print("Database connection initialized with SQLAlchemy.")
+
+# Initialize the model with the API key
+#model = ChatOpenAI(model="gpt-4", api_key=api_key)
 
 # Default candidates
 DEFAULT_CANDIDATES = [
