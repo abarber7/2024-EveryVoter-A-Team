@@ -36,7 +36,11 @@ This project is built using Python and managed with Poetry. Below are the instru
 
 To install Poetry on Linux, run the following command in your terminal: `curl -sSL https://install.python-poetry.org | python3 -`. To install Poetry on Windows, open PowerShell and run: `(Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | python -`.
 
-After installing Poetry, you need to ensure that the Poetry executable is in your system's PATH. For Linux, add the following line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file: `export PATH="$HOME/.local/bin:$PATH"`. Then, reload your shell configuration by running: `source ~/.bashrc` or, if you're using Zsh, `source ~/.zshrc`. On Windows, Poetry is usually added to the PATH automatically. If it isn’t, you can add it manually: 1. Open the Start menu, search for "Environment Variables", and select "Edit the system environment variables". 2. In the System Properties window, click on the "Environment Variables" button. 3. In the Environment Variables window, find the "Path" variable under "System variables" and click "Edit". 4. Click "New" and add the path to Poetry's installation directory, usually `C:\Users\YourUsername\AppData\Roaming\Python\Scripts`.
+After installing Poetry, you need to ensure that the Poetry executable is in your system's PATH. 
+
+For Linux, add the following line to your `~/.bashrc`, `~/.zshrc`, or equivalent shell configuration file: `export PATH="$HOME/.local/bin:$PATH"`. Then, reload your shell configuration by running: `source ~/.bashrc` or, if you're using Zsh, `source ~/.zshrc`. 
+
+On Windows, Poetry is usually added to the PATH automatically. If it isn’t, you can add it manually: 1. Open the Start menu, search for "Environment Variables", and select "Edit the system environment variables". 2. In the System Properties window, click on the "Environment Variables" button. 3. In the Environment Variables window, find the "Path" variable under "System variables" and click "Edit". 4. Click "New" and add the path to Poetry's installation directory, usually `C:\Users\YourUsername\AppData\Roaming\Python\Scripts`.
 
 After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
 
