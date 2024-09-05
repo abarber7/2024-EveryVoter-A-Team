@@ -6,9 +6,9 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Necessary for flashing messages
+app.secret_key = 'your_secret_key'
 
-# Load environment variables from the .env file
+# Load environment variables
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 db_uri = os.getenv("DATABASE_URL")
@@ -16,24 +16,7 @@ db_uri = os.getenv("DATABASE_URL")
 if not api_key:
     raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
 
-#if not db_uri:
-    #raise ValueError("Database URL not found. Ensure DATABASE_URL is set in your environment.")
-
-# Initialize the model with the API key
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
-
-# Configure the database
-#app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-#db = SQLAlchemy(app)
-
-#print("Database connection initialized with SQLAlchemy.")
-
-# Default candidates
-DEFAULT_CANDIDATES = [
-    "Toyota Supra", "Nissan GT-R", "Subaru Impreza", 
-    "Dodge Challenger", "Honda Civic", "Ford Mustang"
-]
 
 # LangChain prompt template for generating restaurant candidates
 restaurant_prompt_template = PromptTemplate(
@@ -51,16 +34,17 @@ restaurant_prompt_template = PromptTemplate(
     )
 )
 
-# In-memory storage for votes and candidates (resets when the app restarts)
+# In-memory storage
 votes = {}
 candidates = []
-election_status = 'not_started'  # New status for when an election is ready but not started
-MAX_VOTES = None  # Maximum number of votes allowed
+election_status = 'not_started'
+MAX_VOTES = None
+restaurant_election_started = False  # Flag to track restaurant election
 
 def get_restaurant_candidates(number_of_restaurants, city, state):
     prompt = restaurant_prompt_template.format(
-        number_of_restaurants=number_of_restaurants, 
-        city=city, 
+        number_of_restaurants=number_of_restaurants,
+        city=city,
         state=state
     )
     response = model.invoke(prompt)
@@ -78,46 +62,9 @@ def index():
     global candidates, votes, election_status, MAX_VOTES
 
     if request.method == "POST":
-        if 'generate_restaurants' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                city = request.form.get('city')
-                state = request.form.get('state')
-                number_of_restaurants = int(request.form.get('number_of_restaurants'))
-                max_votes = int(request.form.get('max_votes'))
-                candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-                start_election(max_votes)
-                flash("Restaurants have been generated. Press 'Start Election' to begin.", "info")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
-        if 'start_default' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                max_votes = int(request.form.get('max_votes'))
-                candidates = DEFAULT_CANDIDATES[:]
-                start_election(max_votes)
-                flash("Default candidates have been selected. Press 'Start Election' to begin.", "info")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
-        if 'start_election' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                if candidates:
-                    max_votes = MAX_VOTES if MAX_VOTES else int(request.form.get('max_votes', 6))
-                    start_election(max_votes)
-                    flash("The election has started.", "info")
-                else:
-                    flash("Please generate or select candidates before starting the election.", "danger")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
         total_votes = sum(votes.values())
-
         if total_votes < MAX_VOTES and election_status == 'ongoing':
             candidate = request.form.get("candidate")
-
             if candidate in votes:
                 votes[candidate] += 1
                 flash("Thank you! Your vote has been successfully submitted.", "success")
@@ -126,12 +73,54 @@ def index():
         elif total_votes >= MAX_VOTES:
             flash("All votes have been cast. The election is now closed.", "info")
             election_status = 'ended'
-
         return redirect(url_for("index"))
 
     remaining_votes = MAX_VOTES - sum(votes.values()) if MAX_VOTES else None
+    return render_template("index.html", candidates=candidates, election_status=election_status, remaining_votes=remaining_votes, restaurant_election_started=restaurant_election_started)
 
-    return render_template("index.html", candidates=candidates, election_status=election_status, remaining_votes=remaining_votes)
+@app.route("/choose_category", methods=["GET"])
+def choose_category():
+    category = request.args.get('category', 'restaurant')  # Default to 'restaurant'
+    return render_template("choose_category.html", category=category)
+
+
+@app.route("/start_restaurant_election", methods=["POST"])
+def start_restaurant_election():
+    global candidates, votes, election_status, MAX_VOTES, restaurant_election_started
+
+    if 'generate_restaurants' in request.form:
+        city = request.form.get('city')
+        state = request.form.get('state')
+        number_of_restaurants = int(request.form.get('number_of_restaurants'))
+        max_votes = int(request.form.get('max_votes'))
+        candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+        start_election(max_votes)
+        restaurant_election_started = True
+        flash("Restaurants have been generated. The election has started.", "info")
+    return redirect(url_for("index"))
+
+@app.route("/start_custom_election", methods=["POST"])
+def start_custom_election():
+    global candidates, votes, election_status, MAX_VOTES
+
+    number_of_candidates = int(request.form.get('number_of_custom_candidates'))
+    max_votes = int(request.form.get('max_votes_custom'))
+
+    # Collect the custom candidates from the form
+    candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
+
+    # Ensure all candidates have valid names
+    candidates = [candidate for candidate in candidates if candidate.strip()]
+    
+    if len(candidates) < number_of_candidates:
+        flash("Please provide valid names for all candidates.", "danger")
+        return redirect(url_for('choose_category'))
+
+    start_election(max_votes)
+    flash("Custom candidates have been added. The election has started.", "info")
+    
+    return redirect(url_for("index"))
+
 
 @app.route("/results")
 def results():
