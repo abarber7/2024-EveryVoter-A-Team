@@ -78,46 +78,9 @@ def index():
     global candidates, votes, election_status, MAX_VOTES
 
     if request.method == "POST":
-        if 'generate_restaurants' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                city = request.form.get('city')
-                state = request.form.get('state')
-                number_of_restaurants = int(request.form.get('number_of_restaurants'))
-                max_votes = int(request.form.get('max_votes'))
-                candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-                start_election(max_votes)
-                flash("Restaurants have been generated. Press 'Start Election' to begin.", "info")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
-        if 'start_default' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                max_votes = int(request.form.get('max_votes'))
-                candidates = DEFAULT_CANDIDATES[:]
-                start_election(max_votes)
-                flash("Default candidates have been selected. Press 'Start Election' to begin.", "info")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
-        if 'start_election' in request.form:
-            if election_status == 'not_started' or election_status == 'ended':
-                if candidates:
-                    max_votes = MAX_VOTES if MAX_VOTES else int(request.form.get('max_votes', 6))
-                    start_election(max_votes)
-                    flash("The election has started.", "info")
-                else:
-                    flash("Please generate or select candidates before starting the election.", "danger")
-            else:
-                flash("An election is already ongoing.", "danger")
-            return redirect(url_for("index"))
-
         total_votes = sum(votes.values())
-
         if total_votes < MAX_VOTES and election_status == 'ongoing':
             candidate = request.form.get("candidate")
-
             if candidate in votes:
                 votes[candidate] += 1
                 flash("Thank you! Your vote has been successfully submitted.", "success")
@@ -126,12 +89,34 @@ def index():
         elif total_votes >= MAX_VOTES:
             flash("All votes have been cast. The election is now closed.", "info")
             election_status = 'ended'
-
         return redirect(url_for("index"))
 
     remaining_votes = MAX_VOTES - sum(votes.values()) if MAX_VOTES else None
-
     return render_template("index.html", candidates=candidates, election_status=election_status, remaining_votes=remaining_votes)
+
+@app.route("/choose_category", methods=["GET"])
+def choose_category():
+    return render_template("choose_category.html")
+
+@app.route("/start_restaurant_election", methods=["POST"])
+def start_restaurant_election():
+    global candidates, votes, election_status, MAX_VOTES
+
+    if 'generate_restaurants' in request.form:
+        city = request.form.get('city')
+        state = request.form.get('state')
+        number_of_restaurants = int(request.form.get('number_of_restaurants'))
+        max_votes = int(request.form.get('max_votes'))
+        candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+        start_election(max_votes)
+        flash("Restaurants have been generated. Press 'Start Election' to begin.", "info")
+    elif 'start_default' in request.form:
+        max_votes = int(request.form.get('max_votes'))
+        candidates = DEFAULT_CANDIDATES[:]
+        start_election(max_votes)
+        flash("Default candidates have been selected. Press 'Start Election' to begin.", "info")
+
+    return redirect(url_for("index"))
 
 @app.route("/results")
 def results():

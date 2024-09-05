@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choose Category</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center my-4">Choose Voting Category: Restaurants</h1>
+        <form method="POST" action="{{ url_for('start_restaurant_election') }}">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control mb-2" id="city" name="city" required>
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control mb-2" id="state" name="state" required>
+            </div>
+            <div class="form-group">
+                <label for="number_of_restaurants">Number of Restaurants</label>
+                <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="max_votes">Maximum Votes</label>
+                <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
+            </div>
+            <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
+            <button type="submit" name="start_default" value="start_default" class="btn btn-info btn-block mb-2">Use Default Candidates</button>
+        </form>
+    </div>
+    <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
+</body>
+</html>
