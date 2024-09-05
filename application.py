@@ -18,12 +18,6 @@ if not api_key:
 
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
 
-# Default candidates
-DEFAULT_CANDIDATES = [
-    "Toyota Supra", "Nissan GT-R", "Subaru Impreza",
-    "Dodge Challenger", "Honda Civic", "Ford Mustang"
-]
-
 # LangChain prompt template for generating restaurant candidates
 restaurant_prompt_template = PromptTemplate(
     input_variables=["number_of_restaurants", "city", "state"],
@@ -103,22 +97,6 @@ def start_restaurant_election():
         start_election(max_votes)
         restaurant_election_started = True
         flash("Restaurants have been generated. The election has started.", "info")
-    return redirect(url_for("index"))
-
-@app.route("/start_default_election", methods=["POST"])
-def start_default_election():
-    global candidates, votes, election_status, MAX_VOTES, restaurant_election_started
-
-    if election_status == 'not_started' or election_status == 'ended':
-        if not restaurant_election_started:  # Only start default election if restaurant election hasn't started
-            max_votes = 10
-            candidates = DEFAULT_CANDIDATES[:]
-            start_election(max_votes)
-            flash("Default candidates have been selected. The election has started.", "info")
-        else:
-            flash("A restaurant election is already in progress. Cannot start default election.", "danger")
-    else:
-        flash("An election is already ongoing.", "danger")
     return redirect(url_for("index"))
 
 @app.route("/start_custom_election", methods=["POST"])

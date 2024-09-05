@@ -40,11 +40,6 @@
             <!-- Button for choosing custom candidates -->
             <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
 
-            {% if not restaurant_election_started %}
-                <form method="POST" action="{{ url_for('start_default_election') }}" style="display:inline;">
-                    <button type="submit" class="btn btn-info btn-block mb-2">Use Default Candidates</button>
-                </form>
-            {% endif %}
         {% endif %}
 
         <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
