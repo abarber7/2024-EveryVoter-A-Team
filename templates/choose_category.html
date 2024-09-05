@@ -6,31 +6,71 @@
     <title>Choose Category</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
+    <script>
+        // Function to dynamically generate candidate input fields
+        function generateCandidateFields() {
+            const numCandidates = document.getElementById('number_of_custom_candidates').value;
+            const candidatesContainer = document.getElementById('custom_candidates_container');
+            candidatesContainer.innerHTML = ""; // Clear previous candidate fields
+
+            // Generate input fields based on the user's input
+            for (let i = 0; i < numCandidates; i++) {
+                const inputField = document.createElement('input');
+                inputField.type = 'text';
+                inputField.name = `candidate_${i + 1}`;
+                inputField.classList.add('form-control', 'mb-2');
+                inputField.placeholder = `Enter Candidate ${i + 1}`;
+                inputField.required = true;
+                candidatesContainer.appendChild(inputField);
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center my-4">Choose Voting Category: Restaurants</h1>
-        <form method="POST" action="{{ url_for('start_restaurant_election') }}">
-            <div class="form-group">
-                <label for="city">City</label>
-                <input type="text" class="form-control mb-2" id="city" name="city" required>
-            </div>
-            <div class="form-group">
-                <label for="state">State</label>
-                <input type="text" class="form-control mb-2" id="state" name="state" required>
-            </div>
-            <div class="form-group">
-                <label for="number_of_restaurants">Number of Restaurants</label>
-                <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="max_votes">Maximum Votes</label>
-                <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
-            </div>
-            <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
-            <button type="submit" name="start_default" value="start_default" class="btn btn-info btn-block mb-2">Use Default Candidates</button>
-        </form>
+        <h1 class="text-center my-4">Choose Voting Category</h1>
+
+        {% if category == 'restaurant' %}
+            <!-- Restaurant voting section -->
+            <form method="POST" action="{{ url_for('start_restaurant_election') }}">
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" class="form-control mb-2" id="city" name="city" required>
+                </div>
+                <div class="form-group">
+                    <label for="state">State</label>
+                    <input type="text" class="form-control mb-2" id="state" name="state" required>
+                </div>
+                <div class="form-group">
+                    <label for="number_of_restaurants">Number of Restaurants</label>
+                    <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="max_votes">Maximum Votes</label>
+                    <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
+                </div>
+                <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
+            </form>
+        {% elif category == 'custom' %}
+            <!-- Custom candidate voting section -->
+            <form method="POST" action="{{ url_for('start_custom_election') }}">
+                <div class="form-group">
+                    <label for="number_of_custom_candidates">Number of Candidates</label>
+                    <input type="number" class="form-control mb-2" id="number_of_custom_candidates" name="number_of_custom_candidates" min="1" required oninput="generateCandidateFields()">
+                </div>
+
+                <div id="custom_candidates_container"></div> <!-- Container for dynamic candidate fields -->
+
+                <div class="form-group">
+                    <label for="max_votes_custom">Maximum Votes</label>
+                    <input type="number" class="form-control mb-2" id="max_votes_custom" name="max_votes_custom" min="1" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block mb-2">Start Election with Custom Candidates</button>
+            </form>
+        {% endif %}
     </div>
-    <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
+
+    <script src="static/shooting-stars.js"></script> <!-- Link to JS -->
 </body>
 </html>
