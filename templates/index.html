@@ -33,39 +33,18 @@
             </form>
         {% endif %}
 
-        <form method="POST" action="/">
-            {% if election_status == 'not_started' or election_status == 'ended' %}
-                <div class="form-group">
-                    <label for="city" class="text-light">City</label>
-                    <input type="text" class="form-control mb-2" id="city" name="city">
-                </div>
-                <div class="form-group">
-                    <label for="state" class="text-light">State</label>
-                    <input type="text" class="form-control mb-2" id="state" name="state">
-                </div>
-                <div class="form-group">
-                    <label for="number" class="text-light">Number of Restaurants</label>
-                    <input type="number" class="form-control mb-2" id="number" name="number_of_restaurants" min="1">
-                </div>
-                <div class="form-group">
-                    <label for="max_votes" class="text-light">Maximum Votes</label>
-                    <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1">
-                </div>
-                <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
-                <button type="submit" name="start_default" value="start_default" class="btn btn-info btn-block mb-2">Use Default Candidates</button>
-            {% endif %}
-        </form>
+        {% if election_status == 'not_started' or election_status == 'ended' %}
+            <!-- Button for voting on restaurants -->
+            <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
 
-        {% if candidates and (election_status == 'not_started' or election_status == 'ended') %}
-            <form method="POST" action="/">
-                <button type="submit" name="start_election" value="start_election" class="btn btn-success btn-block mb-2">Start Election</button>
-            </form>
-            <p class="text-center text-light">Restaurants ready for election.</p>
+            <!-- Button for choosing custom candidates -->
+            <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
+
         {% endif %}
 
         <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
     </div>
 
-    <script src="static/shooting-stars.js"></script> <!-- Link to CSS -->
+    <script src="static/shooting-stars.js"></script>
 </body>
 </html>
