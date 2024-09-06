@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -78,6 +78,21 @@ def index():
     remaining_votes = MAX_VOTES - sum(votes.values()) if MAX_VOTES else None
     return render_template("index.html", candidates=candidates, election_status=election_status, remaining_votes=remaining_votes, restaurant_election_started=restaurant_election_started)
 
+@app.route("/voice_vote", methods=["POST"])
+def voice_vote():
+    global votes, election_status, MAX_VOTES
+    data = request.get_json()
+    candidate = data.get("candidate")
+
+    total_votes = sum(votes.values())
+    if candidate in votes:
+        if total_votes < MAX_VOTES and election_status == 'ongoing':
+            votes[candidate] += 1
+            return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."})
+        else:
+            return jsonify({"message": "All votes have been cast. The election is now closed."})
+    return jsonify({"message": "Candidate not recognized. Please try again."})
+
 @app.route("/choose_category", methods=["GET"])
 def choose_category():
     category = request.args.get('category', 'restaurant')  # Default to 'restaurant'
@@ -120,7 +135,6 @@ def start_custom_election():
     flash("Custom candidates have been added. The election has started.", "info")
     
     return redirect(url_for("index"))
-
 
 @app.route("/results")
 def results():

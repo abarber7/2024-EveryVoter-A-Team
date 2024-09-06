@@ -31,6 +31,13 @@
                     {% endfor %}
                 </div>
             </form>
+
+            <!-- Voice Voting Section -->
+            <h2 class="text-center text-light mt-5">Or Vote by Voice</h2>
+            <div class="text-center">
+                <button id="voice-button" class="btn btn-secondary mt-3">Speak Now</button>
+                <p id="voice-status" class="text-light mt-3"></p>
+            </div>
         {% endif %}
 
         {% if election_status == 'not_started' or election_status == 'ended' %}
@@ -45,6 +52,12 @@
         <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
     </div>
 
+    <!-- Pass candidates data to JavaScript via hidden script -->
+    <script id="candidates-data" type="application/json">{{ candidates|tojson }}</script>
+
+    <!-- JavaScript files -->
     <script src="static/shooting-stars.js"></script>
+    <!-- Include voice.js for voice recognition functionality -->
+    <script src="static/voice.js"></script>
 </body>
 </html>
