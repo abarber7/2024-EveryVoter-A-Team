@@ -87,3 +87,21 @@ body {
 .btn-success {
     background-color: #28a745;
 }
+
+#voice-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+}
+
+#voice-button:hover {
+    background-color: #0056b3;
+}
+
+#voice-status {
+    margin-top: 10px;
+    font-size: 16px;
+    color: #333;
+}

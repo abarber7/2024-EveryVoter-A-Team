@@ -1,21 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vote - EveryVoter</title>
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Vote - EveryVoter{% endblock %}
+
+{% block content %}
     <h1>Cast Your Vote</h1>
     <form action="{{ url_for('vote') }}" method="POST">
         {% for candidate in candidates %}
-            <label>
-                <input type="radio" name="candidate" value="{{ candidate }}">
-                {{ candidate }}
-            </label><br>
+            <div class="form-check">
+                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate }}" required>
+                <label class="form-check-label" for="candidate{{ loop.index }}">
+                    {{ candidate }}
+                </label>
+            </div>
         {% endfor %}
-        <button type="submit">Submit Vote</button>
+        <button type="submit" class="btn btn-primary mt-3">Submit Vote</button>
     </form>
-    <p><a href="/">Back to Home</a></p>
-</body>
-</html>
+    <p><a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Back to Home</a></p>
+{% endblock %}

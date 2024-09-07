@@ -13,4 +13,4 @@ function createShootingStar() {
 }
 
 // Increase frequency of star creation
-setInterval(createShootingStar, 500);
+setInterval(createShootingStar, 200);
