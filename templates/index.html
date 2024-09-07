@@ -1,70 +1,64 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cast Your Vote</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
-</head>
-<body>
+{% extends "base.html" %}
+
+{% block title %}Cast Your Vote{% endblock %}
+
+{% block pre_content %}
     <!-- Background layers for stars, twinkling, and shooting stars -->
     <div class="stars"></div>
     <div class="twinkling"></div>
     <div class="shooting-stars"></div>
+{% endblock %}
 
-    <div class="container">
-        <h1 class="text-center my-4 text-light">Cast Your Vote</h1>
+{% block content %}
+    <h1 class="text-center my-4 text-light">Cast Your Vote</h1>
 
-        <!-- Debug election status -->
-        <p class="text-center text-info">Election Status: {{ election_status }}</p>
+    <!-- Debug election status -->
+    <p class="text-center text-info">Election Status: {{ election_status }}</p>
 
-        {% if election_status == 'ongoing' %}
-            <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
-        {% endif %}
+    {% if election_status == 'ongoing' %}
+        <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
+    {% endif %}
 
-        <!-- Check if candidates exist and election is ongoing -->
-        {% if candidates and election_status == 'ongoing' %}
-            <form method="POST" action="/">
-                <p class="text-center text-light">Remaining Votes: {{ remaining_votes }}</p>
-                <div class="row justify-content-center">
-                    {% for candidate in candidates %}
-                        <div class="col-md-4 mb-2">
-                            <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
-                        </div>
-                    {% endfor %}
-                </div>
-            </form>
-
-            <!-- Voice Voting Section -->
-            <h2 class="text-center text-light mt-5">Or Vote by Voice</h2>
-            <div class="text-center">
-                <button id="voice-button" class="btn btn-secondary mt-3">Speak Now</button>
-                <p id="voice-status" class="text-light mt-3"></p>
+    <!-- Check if candidates exist and election is ongoing -->
+    {% if candidates and election_status == 'ongoing' %}
+        <form method="POST" action="/">
+            <p class="text-center text-light">Remaining Votes: {{ remaining_votes }}</p>
+            <div class="row justify-content-center">
+                {% for candidate in candidates %}
+                    <div class="col-md-4 mb-2">
+                        <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
+                    </div>
+                {% endfor %}
             </div>
-        {% else %}
-            <p class="text-center text-warning">No candidates available or election has not started yet.</p>
-        {% endif %}
+        </form>
 
-        <!-- If election has not started or has ended -->
-        {% if election_status == 'not_started' or election_status == 'ended' %}
-            <!-- Button for voting on restaurants -->
-            <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
+        <!-- Voice Voting Section -->
+        <h2 class="text-center text-light mt-5">Or Vote by Voice</h2>
+        <div class="text-center">
+            <button id="voice-button" class="btn btn-secondary mt-3">Speak Now</button>
+            <p id="voice-status" class="text-light mt-3"></p>
+        </div>
+    {% else %}
+        <p class="text-center text-warning">No candidates available or election has not started yet.</p>
+    {% endif %}
 
-            <!-- Button for choosing custom candidates -->
-            <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
+    <!-- If election has not started or has ended -->
+    {% if election_status == 'not_started' or election_status == 'ended' %}
+        <!-- Button for voting on restaurants -->
+        <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
 
-        {% endif %}
+        <!-- Button for choosing custom candidates -->
+        <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
+    {% endif %}
 
-        <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
-    </div>
+    <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
+{% endblock %}
 
+{% block extra_scripts %}
     <!-- Pass candidates data to JavaScript via hidden script -->
     <script id="candidates-data" type="application/json">{{ candidates|tojson }}</script>
 
     <!-- JavaScript files -->
-    <script src="static/shooting-stars.js"></script>
-    <!-- Include voice.js for voice recognition functionality -->
-    <script src="static/voice.js"></script>
-</body>
-</html>
+    <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
+    <script src="{{ url_for('static', filename='voice.js') }}"></script>
+{% endblock %}

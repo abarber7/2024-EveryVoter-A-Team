@@ -4,17 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EveryVoter{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    {% block extra_head %}{% endblock %}
+    
+    <!-- Extra Styles Block -->
+    {% block extra_styles %}
+    <!-- Additional styles can be added by child templates here -->
+    {% endblock %}
 </head>
 <body>
-    <div class="container mt-5">
-        {% block content %}{% endblock %}
+    <!-- Optional Pre-Content Block (e.g., background layers, back buttons) -->
+    {% block pre_content %}
+    <!-- Child templates can insert elements like background layers or navigation buttons here -->
+    {% endblock %}
+    
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Main Content Block -->
+        {% block content %}
+        <!-- Child templates will populate this block with page-specific content -->
+        {% endblock %}
     </div>
     
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- FontAwesome -->
-    <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
-    {% block extra_scripts %}{% endblock %}
+    <!-- Extra Scripts Block -->
+    {% block extra_scripts %}
+    <!-- Child templates can add additional JavaScript files or inline scripts here -->
+    {% endblock %}
+    
+    <!-- Bootstrap JS and Dependencies (Optional: Include if needed globally) -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

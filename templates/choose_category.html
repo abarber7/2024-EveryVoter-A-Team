@@ -1,11 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choose Category</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
+{% extends "base.html" %}
+
+{% block title %}Choose Category{% endblock %}
+
+{% block extra_styles %}
     <style>
         /* Styling for the "Back" button */
         .back-button {
@@ -30,6 +27,64 @@
             margin-right: 8px;
         }
     </style>
+{% endblock %}
+
+{% block pre_content %}
+    <!-- Back Button -->
+    <div class="back-button" onclick="window.history.back()">
+        <i class="fas fa-arrow-left"></i> Back
+    </div>
+{% endblock %}
+
+{% block content %}
+    <h1 class="text-center my-4">Choose Voting Category</h1>
+
+    {% if category == 'restaurant' %}
+        <!-- Restaurant voting section -->
+        <form method="POST" action="{{ url_for('start_restaurant_election') }}">
+            <div class="form-group">
+                <label for="city">City</label>
+                <input type="text" class="form-control mb-2" id="city" name="city" required>
+            </div>
+            <div class="form-group">
+                <label for="state">State</label>
+                <input type="text" class="form-control mb-2" id="state" name="state" required>
+            </div>
+            <div class="form-group">
+                <label for="number_of_restaurants">Number of Restaurants</label>
+                <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="max_votes">Maximum Votes</label>
+                <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
+            </div>
+            <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
+        </form>
+    {% elif category == 'custom' %}
+        <!-- Custom candidate voting section -->
+        <form method="POST" action="{{ url_for('start_custom_election') }}">
+            <div class="form-group">
+                <label for="number_of_custom_candidates">Number of Candidates</label>
+                <input type="number" class="form-control mb-2" id="number_of_custom_candidates" name="number_of_custom_candidates" min="1" required oninput="generateCandidateFields()">
+            </div>
+
+            <div id="custom_candidates_container"></div> <!-- Container for dynamic candidate fields -->
+
+            <div class="form-group">
+                <label for="max_votes_custom">Maximum Votes</label>
+                <input type="number" class="form-control mb-2" id="max_votes_custom" name="max_votes_custom" min="1" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block mb-2">Start Election with Custom Candidates</button>
+        </form>
+    {% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+    <!-- FontAwesome for arrow icon -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+    <!-- Custom JavaScript -->
     <script>
         // Function to dynamically generate candidate input fields
         function generateCandidateFields() {
@@ -49,59 +104,7 @@
             }
         }
     </script>
-</head>
-<body>
-
-    <!-- Back Button -->
-    <div class="back-button" onclick="window.history.back()">
-        <i class="fas fa-arrow-left"></i> Back
-    </div>
-
-    <div class="container">
-        <h1 class="text-center my-4">Choose Voting Category</h1>
-
-        {% if category == 'restaurant' %}
-            <!-- Restaurant voting section -->
-            <form method="POST" action="{{ url_for('start_restaurant_election') }}">
-                <div class="form-group">
-                    <label for="city">City</label>
-                    <input type="text" class="form-control mb-2" id="city" name="city" required>
-                </div>
-                <div class="form-group">
-                    <label for="state">State</label>
-                    <input type="text" class="form-control mb-2" id="state" name="state" required>
-                </div>
-                <div class="form-group">
-                    <label for="number_of_restaurants">Number of Restaurants</label>
-                    <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="max_votes">Maximum Votes</label>
-                    <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
-                </div>
-                <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
-            </form>
-        {% elif category == 'custom' %}
-            <!-- Custom candidate voting section -->
-            <form method="POST" action="{{ url_for('start_custom_election') }}">
-                <div class="form-group">
-                    <label for="number_of_custom_candidates">Number of Candidates</label>
-                    <input type="number" class="form-control mb-2" id="number_of_custom_candidates" name="number_of_custom_candidates" min="1" required oninput="generateCandidateFields()">
-                </div>
-
-                <div id="custom_candidates_container"></div> <!-- Container for dynamic candidate fields -->
-
-                <div class="form-group">
-                    <label for="max_votes_custom">Maximum Votes</label>
-                    <input type="number" class="form-control mb-2" id="max_votes_custom" name="max_votes_custom" min="1" required>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-block mb-2">Start Election with Custom Candidates</button>
-            </form>
-        {% endif %}
-    </div>
-
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <!-- FontAwesome for arrow icon -->
-    <script src="static/shooting-stars.js"></script> <!-- Link to JS -->
-</body>
-</html>
+    
+    <!-- Include shooting-stars.js -->
+    <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
+{% endblock %}
