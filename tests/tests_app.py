@@ -45,9 +45,10 @@ class ApplicationStartupTestCase(unittest.TestCase):
             # Access the results page
             response = self.app.get('/results')
             self.assertEqual(response.status_code, 200)
-            self.assertIn(b'Voting Results', response.data)
+            self.assertIn(b'Election Results', response.data)
             self.assertIn(b'Alice', response.data)
             self.assertIn(b'Bob', response.data)
+
     
     def test_voice_vote(self):
         """Test the voice voting feature."""
