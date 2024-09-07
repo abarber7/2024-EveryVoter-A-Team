@@ -16,10 +16,14 @@
     <div class="container">
         <h1 class="text-center my-4 text-light">Cast Your Vote</h1>
 
+        <!-- Debug election status -->
+        <p class="text-center text-info">Election Status: {{ election_status }}</p>
+
         {% if election_status == 'ongoing' %}
             <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
         {% endif %}
 
+        <!-- Check if candidates exist and election is ongoing -->
         {% if candidates and election_status == 'ongoing' %}
             <form method="POST" action="/">
                 <p class="text-center text-light">Remaining Votes: {{ remaining_votes }}</p>
@@ -38,8 +42,11 @@
                 <button id="voice-button" class="btn btn-secondary mt-3">Speak Now</button>
                 <p id="voice-status" class="text-light mt-3"></p>
             </div>
+        {% else %}
+            <p class="text-center text-warning">No candidates available or election has not started yet.</p>
         {% endif %}
 
+        <!-- If election has not started or has ended -->
         {% if election_status == 'not_started' or election_status == 'ended' %}
             <!-- Button for voting on restaurants -->
             <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
