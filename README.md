@@ -52,5 +52,6 @@ To remove squiggly warning lines from files where LangChain is used, run `poetry
 
 To run the tests, run `python -m unittest discover tests`.
 
-For the current version, you can enter restaurant information, select Generate Restaurants, then begin the election. Vote at least 6 times to finish the election and return to the home page. 
-Alterntatively, you can select Use Default Candidates to use the default candidates.
+For the current version, you can enter restaurant information, select Generate Restaurants, then begin the election.
+
+To test voting by voice, enter basic candidates in the Choose Your Candidates form, press Speak Now and speak clearly. 
