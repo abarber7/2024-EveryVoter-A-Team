@@ -3,27 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EveryVoter - Voting Results</title>
+    <title>Election Results</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="static/styles.css"> <!-- Link to CSS -->
 </head>
 <body>
+    <div class="container">
+        <h1 class="text-center my-4">Election Results</h1>
 
-<div class="container mt-5">
-    <h1 class="text-center">Voting Results</h1>
-
-    <div class="mt-4">
-        {% for candidate, percentage in results.items() %}
-            <h4>{{ candidate }}</h4>
-            <div class="progress mb-3">
-                <div class="progress-bar" role="progressbar" style="width: {{ percentage }}%;" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">{{ percentage }}%</div>
-            </div>
-        {% endfor %}
+        <div class="mt-4" id="results-container">
+            {% for candidate, percentage in results.items() %}
+                <h4>{{ candidate }}</h4>
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" data-percentage="{{ percentage }}" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ percentage }}%
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
 
-    <div class="text-center mt-4">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Voting</a>
-    </div>
-</div>
-
+    <!-- JavaScript to set progress bar widths dynamically -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(function (bar) {
+                const percentage = bar.getAttribute('data-percentage');
+                bar.style.width = percentage + '%';
+            });
+        });
+    </script>
 </body>
 </html>
