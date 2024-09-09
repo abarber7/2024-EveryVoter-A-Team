@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from flask_sqlalchemy import SQLAlchemy
+import difflib
 import openai
 from io import BytesIO 
 import os
@@ -116,18 +117,26 @@ def voice_vote():
     if not transcript:
         return jsonify({"message": "No transcript provided."}), 400
 
-    # Match transcript against the candidates list
-    candidate = next((c for c in candidates if c.lower() in transcript.lower()), None)
+    # Lowercase the transcript for case-insensitive matching
+    transcript = transcript.lower()
+
+    # Use difflib to find the best match for the spoken transcript
+    candidate = difflib.get_close_matches(transcript, [c.lower() for c in candidates], n=1, cutoff=0.7)
 
     if candidate:
+        # Convert the candidate back to the original case from the candidates list
+        candidate = candidate[0]
+        candidate = next((c for c in candidates if c.lower() == candidate), candidate)
+
         total_votes = sum(votes.values())
         if total_votes < MAX_VOTES and election_status == 'ongoing':
             votes[candidate] += 1
             return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."}), 200
         else:
             return jsonify({"message": "All votes have been cast. The election is now closed."}), 200
-    return jsonify({"message": "Candidate not recognized. Please try again."}), 400
-
+    else:
+        return jsonify({"message": "Candidate not recognized. Please try again."}), 400
+    
 @app.route("/choose_category", methods=["GET"])
 def choose_category():
     """
