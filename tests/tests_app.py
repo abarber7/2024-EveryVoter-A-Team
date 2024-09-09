@@ -53,7 +53,7 @@ class ApplicationStartupTestCase(unittest.TestCase):
     def test_voice_vote(self):
         """Test the voice voting feature."""
         with self.app:
-            # Set up election
+            # Set up election with two candidates
             self.app.post('/start_custom_election', data={
                 'number_of_custom_candidates': '2',
                 'max_votes_custom': '5',
@@ -61,15 +61,20 @@ class ApplicationStartupTestCase(unittest.TestCase):
                 'candidate_2': 'Bob'
             }, follow_redirects=True)
 
-            # Simulate a voice vote
-            response = self.app.post('/voice_vote', json={'candidate': 'Alice'})
+            # Simulate a voice vote with the transcript for 'Alice'
+            response = self.app.post('/voice_vote', json={'transcript': 'Alice'})
             self.assertEqual(response.status_code, 200)
             self.assertIn(b'Thank you! Your vote for Alice has been submitted.', response.data)
 
-            # Simulate a voice vote for an invalid candidate
-            response = self.app.post('/voice_vote', json={'candidate': 'InvalidCandidate'})
-            self.assertEqual(response.status_code, 200)
+            # Simulate a voice vote for an invalid transcript
+            response = self.app.post('/voice_vote', json={'transcript': 'Unknown Candidate'})
+            self.assertEqual(response.status_code, 400)  # Expecting a 400 for unrecognized candidate
             self.assertIn(b'Candidate not recognized. Please try again.', response.data)
+
+            # Simulate a voice vote with the transcript for 'Bob'
+            response = self.app.post('/voice_vote', json={'transcript': 'Bob'})
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Thank you! Your vote for Bob has been submitted.', response.data)
 
 if __name__ == "__main__":
     unittest.main()
