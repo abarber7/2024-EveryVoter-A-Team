@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from flask_sqlalchemy import SQLAlchemy
+import openai
+from io import BytesIO 
 import os
 
 app = Flask(__name__)

@@ -4,73 +4,84 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Ensure the button and status elements exist before proceeding
     if (button && status) {
-        // Access candidates data from the hidden script tag
         const candidates = JSON.parse(document.getElementById('candidates-data').textContent);
 
         button.addEventListener('click', function() {
-            if ('webkitSpeechRecognition' in window) {
-                const recognition = new webkitSpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
+            // Prepare the media recorder for audio capture
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                    const mediaRecorder = new MediaRecorder(stream);
+                    let audioChunks = [];
 
-                // Update the button and status text when starting to listen
-                button.textContent = 'Listening...';
-                button.disabled = true;
-                button.classList.remove('btn-secondary');
-                button.classList.add('btn-warning');
-                status.textContent = 'Please speak your vote.';
+                    mediaRecorder.ondataavailable = function(event) {
+                        audioChunks.push(event.data);
+                    };
 
-                recognition.onstart = function() {
-                    status.textContent = 'Listening... Please speak your vote.';
-                };
+                    mediaRecorder.onstop = function() {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                        const formData = new FormData();
+                        formData.append('audio', audioBlob, 'voice_vote.wav');
 
-                recognition.onresult = function(event) {
-                    const transcript = event.results[0][0].transcript.toLowerCase();
-                    status.textContent = `You said: ${transcript}`;
-
-                    const candidate = candidates.find(c => transcript.includes(c.toLowerCase()));
-                    if (candidate) {
-                        status.textContent += ` (Recognized: ${candidate})`;
-
-                        // Send the recognized candidate to the backend for processing
-                        fetch('/voice_vote', {
+                        button.textContent = 'Processing...';
+                        button.disabled = true;
+                        button.classList.add('btn-warning');
+                        
+                        fetch('/process_audio', {
                             method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ candidate })
+                            body: formData
                         })
                         .then(response => response.json())
                         .then(data => {
-                            status.textContent = data.message;
+                            if (data.transcript) {
+                                const transcript = data.transcript.toLowerCase();
+                                status.textContent = `You said: ${transcript}`;
 
-                            // Reset button after vote is processed
-                            button.textContent = 'Speak Now';
-                            button.disabled = false;
-                            button.classList.remove('btn-warning');
-                            button.classList.add('btn-secondary');
+                                const candidate = candidates.find(c => transcript.includes(c.toLowerCase()));
+                                if (candidate) {
+                                    status.textContent += ` (Recognized: ${candidate})`;
+                                    
+                                    // Send the recognized candidate to the backend for processing
+                                    fetch('/voice_vote', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ candidate })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        status.textContent = data.message;
+
+                                        button.textContent = 'Speak Now';
+                                        button.disabled = false;
+                                        button.classList.remove('btn-warning');
+                                        button.classList.add('btn-secondary');
+                                    });
+                                } else {
+                                    status.textContent = 'Candidate not recognized, please try again.';
+                                    button.textContent = 'Speak Now';
+                                    button.disabled = false;
+                                    button.classList.remove('btn-warning');
+                                    button.classList.add('btn-secondary');
+                                }
+                            } else {
+                                status.textContent = 'Error processing audio. Please try again.';
+                                button.textContent = 'Speak Now';
+                                button.disabled = false;
+                                button.classList.remove('btn-warning');
+                                button.classList.add('btn-secondary');
+                            }
                         });
-                    } else {
-                        status.textContent = 'Candidate not recognized, please try again.';
-                        button.textContent = 'Speak Now';
-                        button.disabled = false;
-                        button.classList.remove('btn-warning');
-                        button.classList.add('btn-secondary');
-                    }
-                };
+                    };
 
-                recognition.onerror = function(event) {
-                    status.textContent = `Error occurred: ${event.error}`;
-                    button.textContent = 'Speak Now';
-                    button.disabled = false;
-                    button.classList.remove('btn-warning');
-                    button.classList.add('btn-secondary');
-                };
+                    mediaRecorder.start();
 
-                recognition.start();
+                    setTimeout(function() {
+                        mediaRecorder.stop();
+                    }, 5000);  // Adjust this duration as necessary
+                });
             } else {
-                status.textContent = 'Your browser does not support speech recognition.';
+                status.textContent = 'Your browser does not support audio recording.';
             }
         });
     } else {
