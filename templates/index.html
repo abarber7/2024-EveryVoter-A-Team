@@ -35,8 +35,17 @@
         <!-- Voice Voting Section -->
         <h2 class="text-center text-light mt-5">Or Vote by Voice</h2>
         <div class="text-center">
+            <!-- Voice Button for Speech Recognition -->
             <button id="voice-button" class="btn btn-secondary mt-3">Speak Now</button>
+        
+            <!-- Status Area for Feedback (e.g., Listening, Processing, Recognized Candidate) -->
             <p id="voice-status" class="text-light mt-3"></p>
+        
+            <!-- Transcription Output Area for Debugging Speech-to-Text -->
+            <div class="transcription-container mt-4">
+                <h5 class="text-light">Speech-to-Text Result:</h5>
+                <p id="transcript-output" class="text-light bg-dark p-2 rounded" style="min-height: 40px;">No speech detected yet.</p> <!-- Dedicated space for speech-to-text -->
+            </div>
         </div>
     {% else %}
         <p class="text-center text-warning">No candidates available or election has not started yet.</p>
