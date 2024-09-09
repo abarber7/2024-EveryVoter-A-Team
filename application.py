@@ -19,6 +19,9 @@ db_uri = os.getenv("DATABASE_URL")
 if not api_key:
     raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
 
+# Initialize OpenAI client with API key
+client = openai.OpenAI(api_key=api_key)
+
 # Initialize the GPT-4 model via LangChain for generating restaurant candidates
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
 
@@ -104,21 +107,26 @@ def index():
 @app.route("/voice_vote", methods=["POST"])
 def voice_vote():
     """
-    Route for handling voice-based voting, which accepts JSON input.
-    - Extracts the candidate name from the input and processes the vote.
+    Handles voice-based voting by matching the recognized candidate from the transcript with the candidates.
     """
     global votes, election_status, MAX_VOTES
-    data = request.get_json()  # Retrieve JSON data from the request
-    candidate = data.get("candidate")  # Extract the candidate from the JSON
+    data = request.get_json()
 
-    total_votes = sum(votes.values())
-    if candidate in votes:
+    transcript = data.get("transcript")
+    if not transcript:
+        return jsonify({"message": "No transcript provided."}), 400
+
+    # Match transcript against the candidates list
+    candidate = next((c for c in candidates if c.lower() in transcript.lower()), None)
+
+    if candidate:
+        total_votes = sum(votes.values())
         if total_votes < MAX_VOTES and election_status == 'ongoing':
-            votes[candidate] += 1  # Increment the vote count
-            return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."})
+            votes[candidate] += 1
+            return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."}), 200
         else:
-            return jsonify({"message": "All votes have been cast. The election is now closed."})
-    return jsonify({"message": "Candidate not recognized. Please try again."})
+            return jsonify({"message": "All votes have been cast. The election is now closed."}), 200
+    return jsonify({"message": "Candidate not recognized. Please try again."}), 400
 
 @app.route("/choose_category", methods=["GET"])
 def choose_category():
@@ -183,6 +191,53 @@ def results():
     results_percentage = {candidate: (count / total_votes) * 100 if total_votes > 0 else 0 for candidate, count in votes.items()}
 
     return render_template("results.html", results=results_percentage)
+
+@app.route("/process_audio", methods=["POST"])
+def process_audio():
+    try:
+        # Log the incoming request
+        print("Processing audio request...")
+
+        # Get the audio file from the request
+        audio_file = request.files.get('audio')
+
+        if not audio_file:
+            print("No audio file found in the request.")
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        # Read the audio file in-memory using BytesIO (without saving locally)
+        audio_data = BytesIO(audio_file.read())
+        audio_data.name = "voice_vote.wav"  # Provide a name for the in-memory file
+
+        # Transcribe the audio using the new API method
+        transcription = client.audio.transcriptions.create(
+            model="whisper-1",
+            file=audio_data
+        )
+
+        # Log the full transcription response to understand its structure
+        print("Transcription response:", transcription)
+
+        # Check if 'text' is part of the transcription response
+        if hasattr(transcription, 'text'):
+            # Log the transcription text result
+            print("Transcription result:", transcription.text)
+            # Return the transcription to the frontend
+            return jsonify({'transcript': transcription.text}), 200
+        else:
+            print("No text field in transcription response.")
+            return jsonify({'error': 'No transcription text found.'}), 500
+
+    except openai.APIConnectionError as e:
+        print("API connection error:", e)
+        return jsonify({'error': 'API connection error. Please try again later.'}), 500
+
+    except openai.RateLimitError as e:
+        print("Rate limit exceeded:", e)
+        return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
+
+    except openai.BadRequestError as e:
+        print(f"Bad request: {e}")
 
 if __name__ == "__main__":
     app.run(debug=True)

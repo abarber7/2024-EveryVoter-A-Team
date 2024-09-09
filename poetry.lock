@@ -1668,6 +1668,17 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "string-similarity"
+version = "0.0.2"
+description = "Finds degree of similarity between two strings, based on Dice's Coefficient, which is mostly better than Levenshtein distance."
+optional = false
+python-versions = ">=3.11"
+files = [
+    {file = "string_similarity-0.0.2-py3-none-any.whl", hash = "sha256:2c833f7182a13e58967bf69338c59a24ce11ff96dceae721f0de7f1dfe09ce0a"},
+    {file = "string_similarity-0.0.2.tar.gz", hash = "sha256:461d99f5167d9ec176618203ba50649aed940837ab4b83915c0765efa7c2a480"},
+]
+
+[[package]]
 name = "tenacity"
 version = "8.5.0"
 description = "Retry code until it succeeds"
@@ -1907,4 +1918,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "99ffe52eb04d7687534b47798db6a77fc2381543eb57e6cdb117467b6e0a2c59"
+content-hash = "83c06c691215b3357559c3e0fc191aa3e69b855763e0db6ecb23bb30bc100bdb"
