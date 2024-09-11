@@ -132,47 +132,54 @@ def get_remaining_votes():
 def index():
     """
     Main route that handles vote submission and displays the voting interface.
-    - GET: Renders the voting page with available candidates.
-    - POST: Processes vote submission, checks vote validity, and updates the vote count.
     """
     if request.method == "POST":
         candidate = request.form.get("candidate")
-        message, message_type = process_vote(candidate)
-        if message:
-            flash(message, message_type)
+        success, message = submit_vote(candidate)
+        flash(message, "success" if success else "danger")
         return redirect(url_for("index"))
 
     remaining_votes = get_remaining_votes()
     return render_template("index.html", candidates=election_state.candidates, election_status=election_state.election_status, remaining_votes=remaining_votes, restaurant_election_started=election_state.restaurant_election_started)
 
+def submit_vote(candidate):
+    """
+    Process the vote for the given candidate and return the result.
+    :param candidate: The candidate name for whom the vote is being cast.
+    :return: A tuple with a success flag and a message (is_success, message).
+    """
+    total_votes = sum(election_state.votes.values())
+    if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
+        if candidate in election_state.votes:
+            election_state.votes[candidate] += 1
+            return True, f"Thank you! Your vote for {candidate} has been submitted."
+        else:
+            return False, "Invalid candidate selected."
+    else:
+        election_state.election_status = 'ended'
+        return False, "All votes have been cast. The election is now closed."
+    
 @app.route("/voice_vote", methods=["POST"])
 def voice_vote():
     """
     Handles voice-based voting by matching the recognized candidate from the transcript with the candidates.
     """
     data = request.get_json()
-
     transcript = data.get("transcript")
+    
     if not transcript:
         return jsonify({"message": "No transcript provided."}), 400
 
     # Lowercase the transcript for case-insensitive matching
     transcript = transcript.lower()
-
-    # Use difflib to find the best match for the spoken transcript
-    candidate = difflib.get_close_matches(transcript, [c.lower() for c in election_state.candidates], n=1, cutoff=0.7)
-
-    if candidate:
-        # Convert the candidate back to the original case from the candidates list
-        candidate = candidate[0]
-        candidate = next((c for c in election_state.candidates if c.lower() == candidate), candidate)
-
-        total_votes = sum(election_state.votes.values())
-        if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
-            election_state.votes[candidate] += 1
-            return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."}), 200
-        else:
-            return jsonify({"message": "All votes have been cast. The election is now closed."}), 200
+    
+    # Find the best match for the spoken transcript
+    candidate_match = difflib.get_close_matches(transcript, [c.lower() for c in election_state.candidates], n=1, cutoff=0.7)
+    
+    if candidate_match:
+        candidate = next((c for c in election_state.candidates if c.lower() == candidate_match[0]), candidate_match[0])
+        success, message = submit_vote(candidate)
+        return jsonify({"message": message}), 200 if success else 400
     else:
         return jsonify({"message": "Candidate not recognized. Please try again."}), 400
     
