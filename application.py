@@ -7,6 +7,7 @@ import difflib
 import openai
 from io import BytesIO 
 import os
+from models.election_state import ElectionState
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -33,6 +34,8 @@ client = openai.OpenAI(api_key=api_key)
 # Initialize the GPT-4 model via LangChain for generating restaurant candidates
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
 
+election_state = ElectionState()
+
 # LangChain prompt template for generating restaurant candidates based on user input
 restaurant_prompt_template = PromptTemplate(
     input_variables=["number_of_restaurants", "city", "state"],
@@ -49,13 +52,6 @@ restaurant_prompt_template = PromptTemplate(
     )
 )
 
-# In-memory storage for votes and election state
-votes = {}  # Dictionary to store votes for each candidate
-candidates = []  # List to store current candidates
-election_status = 'not_started'  # Tracks election status ('not_started', 'ongoing', 'ended')
-MAX_VOTES = None  # Maximum number of votes allowed per election
-restaurant_election_started = False  # Tracks whether a restaurant election has started
-
 def get_restaurant_candidates(number_of_restaurants, city, state):
     """
     Generate restaurant candidates using GPT-4 based on user inputs (number of restaurants, city, state).
@@ -69,19 +65,18 @@ def get_restaurant_candidates(number_of_restaurants, city, state):
         city=city,
         state=state
     )
-    response = model.invoke(prompt)  # Query GPT-4 with the formatted prompt
-    content = response.content  # Retrieve the response content
-    return content.strip().split("\n")[:number_of_restaurants]  # Return the top restaurant names
+    response = model.invoke(prompt)  
+    content = response.content  
+    return content.strip().split("\n")[:number_of_restaurants] 
 
 def start_election(max_votes):
     """
     Start a new election by initializing vote counts and setting the election status to 'ongoing'.
     :param max_votes: The maximum number of votes allowed for this election.
     """
-    global votes, election_status, MAX_VOTES
-    votes = {candidate: 0 for candidate in candidates}  # Initialize vote counts to 0 for each candidate
-    election_status = 'ongoing'
-    MAX_VOTES = max_votes  # Set the vote limit
+    election_state.votes = {candidate: 0 for candidate in election_state.candidates}  
+    election_state.election_status = 'ongoing'
+    election_state.MAX_VOTES = max_votes
 
 @app.route("/", methods=["GET", "POST"])
 def index():
@@ -90,34 +85,28 @@ def index():
     - GET: Renders the voting page with available candidates.
     - POST: Processes vote submission, checks vote validity, and updates the vote count.
     """
-    global candidates, votes, election_status, MAX_VOTES
-
     if request.method == "POST":
-        # Check if the election is ongoing and if the vote count is below the allowed limit
-        total_votes = sum(votes.values())
-        if total_votes < MAX_VOTES and election_status == 'ongoing':
-            candidate = request.form.get("candidate")  # Get the selected candidate from the form
-            if candidate in votes:
-                votes[candidate] += 1  # Increment the vote count for the selected candidate
+        total_votes = sum(election_state.votes.values())
+        if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
+            candidate = request.form.get("candidate")
+            if candidate in election_state.votes:
+                election_state.votes[candidate] += 1
                 flash("Thank you! Your vote has been successfully submitted.", "success")
             else:
                 flash("Invalid candidate selected.", "danger")
-        elif total_votes >= MAX_VOTES:
-            # End the election if the maximum vote count has been reached
+        elif total_votes >= election_state.MAX_VOTES:
             flash("All votes have been cast. The election is now closed.", "info")
-            election_status = 'ended'
+            election_state.election_status = 'ended'
         return redirect(url_for("index"))
 
-    # Calculate remaining votes
-    remaining_votes = MAX_VOTES - sum(votes.values()) if MAX_VOTES else None
-    return render_template("index.html", candidates=candidates, election_status=election_status, remaining_votes=remaining_votes, restaurant_election_started=restaurant_election_started)
+    remaining_votes = election_state.MAX_VOTES - sum(election_state.votes.values()) if election_state.MAX_VOTES else None
+    return render_template("index.html", candidates=election_state.candidates, election_status=election_state.election_status, remaining_votes=remaining_votes, restaurant_election_started=election_state.restaurant_election_started)
 
 @app.route("/voice_vote", methods=["POST"])
 def voice_vote():
     """
     Handles voice-based voting by matching the recognized candidate from the transcript with the candidates.
     """
-    global votes, election_status, MAX_VOTES
     data = request.get_json()
 
     transcript = data.get("transcript")
@@ -128,16 +117,16 @@ def voice_vote():
     transcript = transcript.lower()
 
     # Use difflib to find the best match for the spoken transcript
-    candidate = difflib.get_close_matches(transcript, [c.lower() for c in candidates], n=1, cutoff=0.7)
+    candidate = difflib.get_close_matches(transcript, [c.lower() for c in election_state.candidates], n=1, cutoff=0.7)
 
     if candidate:
         # Convert the candidate back to the original case from the candidates list
         candidate = candidate[0]
-        candidate = next((c for c in candidates if c.lower() == candidate), candidate)
+        candidate = next((c for c in election_state.candidates if c.lower() == candidate), candidate)
 
-        total_votes = sum(votes.values())
-        if total_votes < MAX_VOTES and election_status == 'ongoing':
-            votes[candidate] += 1
+        total_votes = sum(election_state.votes.values())
+        if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
+            election_state.votes[candidate] += 1
             return jsonify({"message": f"Thank you! Your vote for {candidate} has been submitted."}), 200
         else:
             return jsonify({"message": "All votes have been cast. The election is now closed."}), 200
@@ -159,16 +148,14 @@ def start_restaurant_election():
     - Retrieves user inputs for the number of restaurants, city, and state.
     - Starts the election with the generated candidates.
     """
-    global candidates, votes, election_status, MAX_VOTES, restaurant_election_started
-
     if 'generate_restaurants' in request.form:
         city = request.form.get('city')
         state = request.form.get('state')
         number_of_restaurants = int(request.form.get('number_of_restaurants'))
         max_votes = int(request.form.get('max_votes'))
-        candidates = get_restaurant_candidates(number_of_restaurants, city, state)  # Generate restaurant candidates
-        start_election(max_votes)  # Start the election
-        restaurant_election_started = True
+        election_state.candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+        start_election(max_votes)
+        election_state.restaurant_election_started = True
         flash("Restaurants have been generated. The election has started.", "info")
     return redirect(url_for("index"))
 
@@ -178,18 +165,16 @@ def start_custom_election():
     Starts a custom election with user-provided candidates.
     - Retrieves the number of candidates and their names from the form.
     """
-    global candidates, votes, election_status, MAX_VOTES
-
     number_of_candidates = int(request.form.get('number_of_custom_candidates'))
     max_votes = int(request.form.get('max_votes_custom'))
 
     # Collect the custom candidates from the form
-    candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
+    election_state.candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
 
     # Ensure all candidates have valid names
-    candidates = [candidate for candidate in candidates if candidate.strip()]
-    
-    if len(candidates) < number_of_candidates:
+    election_state.candidates = [candidate for candidate in election_state.candidates if candidate.strip()]
+
+    if len(election_state.candidates) < number_of_candidates:
         flash("Please provide valid names for all candidates.", "danger")
         return redirect(url_for('choose_category'))
 
@@ -203,42 +188,37 @@ def results():
     """
     Displays the election results, showing the percentage of votes for each candidate.
     """
-    total_votes = sum(votes.values())
-    results_percentage = {candidate: (count / total_votes) * 100 if total_votes > 0 else 0 for candidate, count in votes.items()}
+    total_votes = sum(election_state.votes.values())
+    results_percentage = {
+        candidate: (count / total_votes) * 100 if total_votes > 0 else 0 
+        for candidate, count in election_state.votes.items()
+    }
 
     return render_template("results.html", results=results_percentage)
 
 @app.route("/process_audio", methods=["POST"])
 def process_audio():
     try:
-        # Log the incoming request
         print("Processing audio request...")
 
-        # Get the audio file from the request
         audio_file = request.files.get('audio')
 
         if not audio_file:
             print("No audio file found in the request.")
             return jsonify({'error': 'No audio file provided'}), 400
 
-        # Read the audio file in-memory using BytesIO (without saving locally)
         audio_data = BytesIO(audio_file.read())
-        audio_data.name = "voice_vote.wav"  # Provide a name for the in-memory file
+        audio_data.name = "voice_vote.wav"
 
-        # Transcribe the audio using the new API method
         transcription = client.audio.transcriptions.create(
             model="whisper-1",
             file=audio_data
         )
 
-        # Log the full transcription response to understand its structure
         print("Transcription response:", transcription)
 
-        # Check if 'text' is part of the transcription response
         if hasattr(transcription, 'text'):
-            # Log the transcription text result
             print("Transcription result:", transcription.text)
-            # Return the transcription to the frontend
             return jsonify({'transcript': transcription.text}), 200
         else:
             print("No text field in transcription response.")
