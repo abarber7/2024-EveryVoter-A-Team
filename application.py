@@ -11,15 +11,22 @@ import os
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Load environment variables from a .env file for security and flexibility
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-db_uri = os.getenv("DATABASE_URL")
+# Load environment variables from the .env file for security and flexibility
+def load_env_vars():
+    """
+    Load and validate environment variables.
+    """
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+    db_uri = os.getenv("DATABASE_URL")
 
-# Ensure the API key is provided in the environment
-if not api_key:
-    raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
+    if not api_key:
+        raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
 
+    return api_key, db_uri
+
+# Load environment variables
+api_key, db_uri = load_env_vars()
 # Initialize OpenAI client with API key
 client = openai.OpenAI(api_key=api_key)
 
