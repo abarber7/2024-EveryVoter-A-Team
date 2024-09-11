@@ -216,6 +216,15 @@ def results():
 
     return render_template("results.html", results=results_percentage)
 
+def create_error_response(message, status_code=400):
+    """
+    Helper function to create a standardized error response.
+    :param message: The error message to send to the client.
+    :param status_code: The HTTP status code to return (default is 400).
+    :return: A Flask `jsonify` object with the error message and status code.
+    """
+    return jsonify({'error': message}), status_code
+
 @app.route("/process_audio", methods=["POST"])
 def process_audio():
     try:
@@ -225,7 +234,7 @@ def process_audio():
 
         if not audio_file:
             print("No audio file found in the request.")
-            return jsonify({'error': 'No audio file provided'}), 400
+            return create_error_response('No audio file provided', 400)
 
         audio_data = BytesIO(audio_file.read())
         audio_data.name = "voice_vote.wav"
@@ -242,18 +251,19 @@ def process_audio():
             return jsonify({'transcript': transcription.text}), 200
         else:
             print("No text field in transcription response.")
-            return jsonify({'error': 'No transcription text found.'}), 500
+            return create_error_response('No transcription text found.', 500)
 
     except openai.APIConnectionError as e:
         print("API connection error:", e)
-        return jsonify({'error': 'API connection error. Please try again later.'}), 500
+        return create_error_response('API connection error. Please try again later.', 500)
 
     except openai.RateLimitError as e:
         print("Rate limit exceeded:", e)
-        return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
+        return create_error_response('Rate limit exceeded. Please try again later.', 429)
 
     except openai.BadRequestError as e:
         print(f"Bad request: {e}")
+        return create_error_response('Bad request.', 400)
 
 if __name__ == "__main__":
     app.run(debug=True)
