@@ -88,6 +88,19 @@ def start_election(max_votes):
     election_state.election_status = 'ongoing'
     election_state.MAX_VOTES = max_votes
 
+def start_general_election(candidates, max_votes):
+    """
+    A helper function to start an election for any type of candidate (restaurants or custom).
+    :param candidates: A list of candidate names for the election.
+    :param max_votes: Maximum number of votes allowed.
+    """
+    election_state.candidates = [candidate for candidate in candidates if candidate.strip()]
+
+    if len(election_state.candidates) == 0:
+        raise ValueError("No valid candidates provided.")
+
+    start_election(max_votes)
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     """
@@ -163,8 +176,10 @@ def start_restaurant_election():
         state = request.form.get('state')
         number_of_restaurants = int(request.form.get('number_of_restaurants'))
         max_votes = int(request.form.get('max_votes'))
-        election_state.candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-        start_election(max_votes)
+
+        candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+        start_general_election(candidates, max_votes)
+
         election_state.restaurant_election_started = True
         flash("Restaurants have been generated. The election has started.", "info")
     return redirect(url_for("index"))
@@ -173,24 +188,19 @@ def start_restaurant_election():
 def start_custom_election():
     """
     Starts a custom election with user-provided candidates.
-    - Retrieves the number of candidates and their names from the form.
     """
     number_of_candidates = int(request.form.get('number_of_custom_candidates'))
     max_votes = int(request.form.get('max_votes_custom'))
 
-    # Collect the custom candidates from the form
-    election_state.candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
+    candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
 
-    # Ensure all candidates have valid names
-    election_state.candidates = [candidate for candidate in election_state.candidates if candidate.strip()]
-
-    if len(election_state.candidates) < number_of_candidates:
+    try:
+        start_general_election(candidates, max_votes)
+        flash("Custom candidates have been added. The election has started.", "info")
+    except ValueError:
         flash("Please provide valid names for all candidates.", "danger")
         return redirect(url_for('choose_category'))
 
-    start_election(max_votes)
-    flash("Custom candidates have been added. The election has started.", "info")
-    
     return redirect(url_for("index"))
 
 @app.route("/results")
