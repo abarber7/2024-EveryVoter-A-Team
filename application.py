@@ -101,6 +101,33 @@ def start_general_election(candidates, max_votes):
 
     start_election(max_votes)
 
+def process_vote(candidate):
+    """
+    Process the vote for the given candidate, ensuring it's valid and updating the vote count.
+    :param candidate: The candidate for whom the vote is being cast.
+    :return: A tuple (message, message_type) to display a flash message.
+    """
+    total_votes = sum(election_state.votes.values())
+    if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
+        if candidate in election_state.votes:
+            election_state.votes[candidate] += 1
+            return "Thank you! Your vote has been successfully submitted.", "success"
+        else:
+            return "Invalid candidate selected.", "danger"
+    elif total_votes >= election_state.MAX_VOTES:
+        election_state.election_status = 'ended'
+        return "All votes have been cast. The election is now closed.", "info"
+    return None, None
+
+def get_remaining_votes():
+    """
+    Calculate the number of remaining votes.
+    :return: The number of remaining votes or None if no votes are allowed.
+    """
+    if election_state.MAX_VOTES:
+        return election_state.MAX_VOTES - sum(election_state.votes.values())
+    return None
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     """
@@ -109,20 +136,13 @@ def index():
     - POST: Processes vote submission, checks vote validity, and updates the vote count.
     """
     if request.method == "POST":
-        total_votes = sum(election_state.votes.values())
-        if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
-            candidate = request.form.get("candidate")
-            if candidate in election_state.votes:
-                election_state.votes[candidate] += 1
-                flash("Thank you! Your vote has been successfully submitted.", "success")
-            else:
-                flash("Invalid candidate selected.", "danger")
-        elif total_votes >= election_state.MAX_VOTES:
-            flash("All votes have been cast. The election is now closed.", "info")
-            election_state.election_status = 'ended'
+        candidate = request.form.get("candidate")
+        message, message_type = process_vote(candidate)
+        if message:
+            flash(message, message_type)
         return redirect(url_for("index"))
 
-    remaining_votes = election_state.MAX_VOTES - sum(election_state.votes.values()) if election_state.MAX_VOTES else None
+    remaining_votes = get_remaining_votes()
     return render_template("index.html", candidates=election_state.candidates, election_status=election_state.election_status, remaining_votes=remaining_votes, restaurant_election_started=election_state.restaurant_election_started)
 
 @app.route("/voice_vote", methods=["POST"])
