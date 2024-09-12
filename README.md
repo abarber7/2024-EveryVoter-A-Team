@@ -44,7 +44,7 @@ On Windows, Poetry is usually added to the PATH automatically. If it isn’t, yo
 
 After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
 
-Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:app` and `OPENAI_API_KEY=your_openai_api_key_here`. Replace `your_openai_api_key_here` with your actual OpenAI API key.
+Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:app`, `OPENAI_API_KEY=your_openai_api_key_here`, and `elevenlabs_api_key=your_elevenlabs_api_key_here`. Replace `your_*_api_key_here` with your actual API key.
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
