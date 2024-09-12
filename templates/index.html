@@ -29,6 +29,8 @@
         <!-- Introduce Candidates Button -->
         <div class="text-center my-4">
             <button id="introduceButton" class="btn btn-info">Introduce Candidates</button>
+            <!-- Hidden paragraph to show "Grabbing the mic..." -->
+            <p id="statusText" style="display: none;">Grabbing the mic...</p>
         </div>
 
         <!-- Audio Player for TTS -->
@@ -58,6 +60,13 @@
     <script>
         // Handle "Introduce Candidates" button click
         document.getElementById('introduceButton').addEventListener('click', function() {
+            var introduceButton = document.getElementById('introduceButton');
+            var statusText = document.getElementById('statusText');
+
+            // Change button text to "Listening..." and display "Grabbing the mic..."
+            introduceButton.innerHTML = "Queued audio";
+            statusText.style.display = "block";
+
             // Make a POST request to fetch the TTS audio for candidate introductions
             fetch('/generate-candidates-audio', {
                 method: 'POST'
@@ -69,9 +78,17 @@
                 var audioPlayer = document.getElementById('audioPlayer');
                 audioPlayer.src = audioURL;
                 audioPlayer.play();  // Automatically play the audio
+
+                // Reset button text and hide "Grabbing the mic..." message
+                introduceButton.innerHTML = "Introduce Candidates";
+                statusText.style.display = "none";
             })
             .catch(error => {
                 console.error('Error:', error);
+
+                // Reset button text and hide "Grabbing the mic..." message if an error occurs
+                introduceButton.innerHTML = "Introduce Candidates";
+                statusText.style.display = "none";
             });
         });
     </script>
