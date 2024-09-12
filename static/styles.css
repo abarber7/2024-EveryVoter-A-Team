@@ -106,11 +106,23 @@ body {
     color: #333;
 }
 
-/* Back Button Styling */
+/* Shooting stars should be behind everything else */
+.shooting-stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* This keeps the shooting stars in the background */
+    pointer-events: none; /* Prevent the stars from blocking any interaction */
+}
+
+/* Back button should be in front */
 .back-button {
     position: fixed;
     top: 20px;
     left: 20px;
+    z-index: 10;
     padding: 10px 20px;
     background-color: #343a40;
     color: white;
