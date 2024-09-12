@@ -58,13 +58,31 @@ restaurant_prompt_template = PromptTemplate(
 # Generate a sentence using GPT-4 based on user input
 def generate_gpt4_text_introduction():
     introductions = []
-    for candidate in election_state.candidates:
-        gpt_text = model.invoke(f"In a seductive tone, welcome {candidate} in 6 words or less. Speak a complete sentence.")
+    for index, candidate in enumerate(election_state.candidates, start=1):
+        gpt_text = model.invoke(f"""In a quirky and enthusiastic tone, welcome {candidate} to a show in a few words. 
+                                Begin the introduction with their position in the list;
+                                Example:
+                                Introducing first, the animated and lively Tony Hawk!
+                                Introducing second, the wonderful and endearing Mariah Carey!
+                                Introduce them as follows:
+                                Introducing {ordinal(index)}, the incredible and talented {candidate}!
+                                """)
         gpt_text = gpt_text.content
         print(f"Generated GPT-4 Response (content only): {gpt_text}")
         introductions.append(gpt_text)
     
     return introductions
+
+def ordinal(n):
+    """Helper function to return ordinal of a number (e.g., 1st, 2nd, 3rd)."""
+    if isinstance(n, int):  # Ensure n is an integer
+        if 10 <= n % 100 <= 20:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+        return f"{n}{suffix}"
+    else:
+        raise ValueError(f"Expected integer, got {type(n)}")
 
 # Route for text-to-speech conversion and streaming audio
 @app.route('/generate-candidates-audio', methods=['POST'])
@@ -85,7 +103,8 @@ def generate_audio():
 
     # Call the ElevenLabs text_to_speech API to convert GPT-4 text to speech
     response = elevenclient.text_to_speech.convert(
-        voice_id="flHkNRp1BlvT73UL6gyz",
+        voice_id ="MF3mGyEYCl7XYWbV9V6O",
+        #voice_id="flHkNRp1BlvT73UL6gyz", 
         #voice_id="pNInz6obpgDQGcFmaJgB",  # Adam pre-made voice
         optimize_streaming_latency="0",
         output_format="mp3_22050_32",
