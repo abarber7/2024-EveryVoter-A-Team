@@ -59,7 +59,7 @@ restaurant_prompt_template = PromptTemplate(
 def generate_gpt4_text_introduction():
     introductions = []
     for candidate in election_state.candidates:
-        gpt_text = model.invoke(f"welcome {candidate} in two words")
+        gpt_text = model.invoke(f"In a seductive tone, welcome {candidate} in 6 words or less. Speak a complete sentence.")
         gpt_text = gpt_text.content
         print(f"Generated GPT-4 Response (content only): {gpt_text}")
         introductions.append(gpt_text)
@@ -67,7 +67,7 @@ def generate_gpt4_text_introduction():
     return introductions
 
 # Route for text-to-speech conversion and streaming audio
-@app.route('/generate-audio', methods=['POST'])
+@app.route('/generate-candidates-audio', methods=['POST'])
 def generate_audio():
     introductions_for_tts = []
     full_intro_string = ""
@@ -85,7 +85,8 @@ def generate_audio():
 
     # Call the ElevenLabs text_to_speech API to convert GPT-4 text to speech
     response = elevenclient.text_to_speech.convert(
-        voice_id="pNInz6obpgDQGcFmaJgB",  # Adam pre-made voice
+        voice_id="flHkNRp1BlvT73UL6gyz",
+        #voice_id="pNInz6obpgDQGcFmaJgB",  # Adam pre-made voice
         optimize_streaming_latency="0",
         output_format="mp3_22050_32",
         text=full_intro_string,  # Pass only the content

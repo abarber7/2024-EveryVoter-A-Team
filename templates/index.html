@@ -26,6 +26,16 @@
             </div>
         </form>
 
+        <!-- Introduce Candidates Button -->
+        <div class="text-center my-4">
+            <button id="introduceButton" class="btn btn-info">Introduce Candidates</button>
+        </div>
+
+        <!-- Audio Player for TTS -->
+        <div class="text-center my-4">
+            <audio id="audioPlayer" controls></audio>
+        </div>
+
         <!-- Include voice voting section -->
         {% include 'partials/voice_voting.html' %}
     {% else %}
@@ -45,7 +55,28 @@
     <!-- Pass candidates data to JavaScript via hidden script -->
     <script id="candidates-data" type="application/json">{{ candidates|tojson }}</script>
 
-    <!-- JavaScript files -->
+    <script>
+        // Handle "Introduce Candidates" button click
+        document.getElementById('introduceButton').addEventListener('click', function() {
+            // Make a POST request to fetch the TTS audio for candidate introductions
+            fetch('/generate-candidates-audio', {
+                method: 'POST'
+            })
+            .then(response => response.blob())  // Get the audio response as a blob
+            .then(blob => {
+                // Set the audio player source to the returned blob
+                var audioURL = URL.createObjectURL(blob);
+                var audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioURL;
+                audioPlayer.play();  // Automatically play the audio
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+
+    <!-- Other JavaScript files -->
     <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
     <script src="{{ url_for('static', filename='voice.js') }}"></script>
 {% endblock %}
