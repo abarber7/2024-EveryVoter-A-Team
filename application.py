@@ -183,13 +183,13 @@ def voice_vote():
     else:
         return jsonify({"message": "Candidate not recognized. Please try again."}), 400
     
-@app.route("/choose_category", methods=["GET"])
+@app.route("/create_election", methods=["GET"])
 def choose_category():
     """
     Route for choosing the election category (restaurant or custom candidates).
     """
     category = request.args.get('category', 'restaurant')  # Default to 'restaurant'
-    return render_template("choose_category.html", category=category)
+    return render_template("create_election.html", category=category)
 
 @app.route("/start_restaurant_election", methods=["POST"])
 def start_restaurant_election():

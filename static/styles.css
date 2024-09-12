@@ -105,3 +105,26 @@ body {
     font-size: 16px;
     color: #333;
 }
+
+/* Back Button Styling */
+.back-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    background-color: #343a40;
+    color: white;
+    border-radius: 30px;
+    font-size: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #495057;
+}
+
+.back-button i {
+    margin-right: 8px;
+}
