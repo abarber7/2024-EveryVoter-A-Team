@@ -2,38 +2,8 @@
 
 {% block title %}Choose Category{% endblock %}
 
-{% block extra_styles %}
-    <style>
-        /* Styling for the "Back" button */
-        .back-button {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            padding: 10px 20px;
-            background-color: #343a40;
-            color: white;
-            border-radius: 30px;
-            font-size: 18px;
-            text-align: center;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        .back-button:hover {
-            background-color: #495057;
-        }
-
-        .back-button i {
-            margin-right: 8px;
-        }
-    </style>
-{% endblock %}
-
 {% block pre_content %}
-    <!-- Back Button -->
-    <div class="back-button" onclick="window.history.back()">
-        <i class="fas fa-arrow-left"></i> Back
-    </div>
+    {% include 'partials/back_button.html' %}
 {% endblock %}
 
 {% block content %}
@@ -68,7 +38,7 @@
                 <input type="number" class="form-control mb-2" id="number_of_custom_candidates" name="number_of_custom_candidates" min="1" required oninput="generateCandidateFields()">
             </div>
 
-            <div id="custom_candidates_container"></div> <!-- Container for dynamic candidate fields -->
+            <div id="custom_candidates_container"></div>
 
             <div class="form-group">
                 <label for="max_votes_custom">Maximum Votes</label>
@@ -81,27 +51,5 @@
 {% endblock %}
 
 {% block extra_scripts %}
-    
-    <!-- Custom JavaScript -->
-    <script>
-        // Function to dynamically generate candidate input fields
-        function generateCandidateFields() {
-            const numCandidates = document.getElementById('number_of_custom_candidates').value;
-            const candidatesContainer = document.getElementById('custom_candidates_container');
-            candidatesContainer.innerHTML = ""; // Clear previous candidate fields
-
-            // Generate input fields based on the user's input
-            for (let i = 0; i < numCandidates; i++) {
-                const inputField = document.createElement('input');
-                inputField.type = 'text';
-                inputField.name = `candidate_${i + 1}`;
-                inputField.classList.add('form-control', 'mb-2');
-                inputField.placeholder = `Enter Candidate ${i + 1}`;
-                inputField.required = true;
-                candidatesContainer.appendChild(inputField);
-            }
-        }
-    </script>
-    
-    
+    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
 {% endblock %}

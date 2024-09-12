@@ -105,3 +105,38 @@ body {
     font-size: 16px;
     color: #333;
 }
+
+/* Shooting stars should be behind everything else */
+.shooting-stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1; /* This keeps the shooting stars in the background */
+    pointer-events: none; /* Prevent the stars from blocking any interaction */
+}
+
+/* Back button should be in front */
+.back-button {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 10;
+    padding: 10px 20px;
+    background-color: #343a40;
+    color: white;
+    border-radius: 30px;
+    font-size: 18px;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+    background-color: #495057;
+}
+
+.back-button i {
+    margin-right: 8px;
+}
