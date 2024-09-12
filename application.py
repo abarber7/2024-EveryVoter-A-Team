@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
+from elevenlabs import VoiceSettings
+from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
 import difflib
 import openai
@@ -20,20 +22,21 @@ def load_env_vars():
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
     db_uri = os.getenv("DATABASE_URL")
+    elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
 
     if not api_key:
         raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
 
-    return api_key, db_uri
+    return api_key, db_uri, elevenlabs_api_key
 
 # Load environment variables
-api_key, db_uri = load_env_vars()
+api_key, db_uri, elevenlabs_api_key = load_env_vars()
 # Initialize OpenAI client with API key
 client = openai.OpenAI(api_key=api_key)
 
 # Initialize the GPT-4 model via LangChain for generating restaurant candidates
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
-
+elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
 election_state = ElectionState()
 
 # LangChain prompt template for generating restaurant candidates based on user input
@@ -51,6 +54,64 @@ restaurant_prompt_template = PromptTemplate(
         "- The Orange Moon Restaurant"
     )
 )
+
+# Generate a sentence using GPT-4 based on user input
+def generate_gpt4_text_introduction():
+    introductions = []
+    for candidate in election_state.candidates:
+        gpt_text = model.invoke(f"In a seductive tone, welcome {candidate} in 6 words or less. Speak a complete sentence.")
+        gpt_text = gpt_text.content
+        print(f"Generated GPT-4 Response (content only): {gpt_text}")
+        introductions.append(gpt_text)
+    
+    return introductions
+
+# Route for text-to-speech conversion and streaming audio
+@app.route('/generate-candidates-audio', methods=['POST'])
+def generate_audio():
+    introductions_for_tts = []
+    full_intro_string = ""
+    # Generate text using GPT-4
+    introductions_for_tts = generate_gpt4_text_introduction()
+    
+    for introduction in introductions_for_tts:
+        full_intro_string += introduction + " "
+
+    if not full_intro_string or not isinstance(full_intro_string, str):
+        return jsonify({"error": "Text generation failed"}), 500
+
+    # Log the cleaned/generated text before sending to TTS
+    print(f"Sending to TTS: {full_intro_string}")
+
+    # Call the ElevenLabs text_to_speech API to convert GPT-4 text to speech
+    response = elevenclient.text_to_speech.convert(
+        voice_id="flHkNRp1BlvT73UL6gyz",
+        #voice_id="pNInz6obpgDQGcFmaJgB",  # Adam pre-made voice
+        optimize_streaming_latency="0",
+        output_format="mp3_22050_32",
+        text=full_intro_string,  # Pass only the content
+        model_id="eleven_turbo_v2",
+        voice_settings=VoiceSettings(
+            stability=0.0,
+            similarity_boost=1.0,
+            style=0.0,
+            use_speaker_boost=True,
+        ),
+    )
+
+    # Create an in-memory bytes buffer to hold the audio data
+    audio_data = BytesIO()
+
+    # Write the audio stream to the in-memory buffer
+    for chunk in response:
+        if chunk:
+            audio_data.write(chunk)
+
+    # Seek to the beginning of the buffer
+    audio_data.seek(0)
+
+    # Return the audio file as a response with the correct MIME type
+    return send_file(audio_data, mimetype="audio/mpeg", as_attachment=False, download_name="output.mp3")
 
 def format_restaurant_prompt(number_of_restaurants, city, state):
     """
