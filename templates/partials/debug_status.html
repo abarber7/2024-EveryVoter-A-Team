@@ -1,0 +1,5 @@
+<p class="text-center text-info">Election Status: {{ election_status }}</p>
+
+{% if election_status == 'ongoing' %}
+    <p class="text-center text-danger">An election is currently ongoing. Please wait until it ends to start a new one.</p>
+{% endif %}
