@@ -5,46 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EveryVoter{% endblock %}</title>
     
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS (Consider using a CDN for performance) -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 
-    <!-- FontAwesome for arrow icon -->
-    <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/js/all.min.js"></script>
+    <!-- FontAwesome -->
+    <script defer src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/js/all.min.js"></script>
 
-    <!-- Include shooting-stars.js -->
-    <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
+    <!-- JavaScript for shooting stars (defer to avoid render blocking) -->
+    <script defer src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/string-similarity@4.0.4/umd/string-similarity.min.js"></script>
+    <!-- String Similarity Library (deferred for non-essential scripts) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/string-similarity@4.0.4/umd/string-similarity.min.js"></script>
     
     <!-- Extra Styles Block -->
     {% block extra_styles %}
-    <!-- Additional styles can be added by child templates here -->
     {% endblock %}
 </head>
 <body>
-    <!-- Optional Pre-Content Block (e.g., background layers, back buttons) -->
+    <!-- Pre-Content Block (e.g., background layers, back buttons) -->
     {% block pre_content %}
-    <!-- Child templates can insert elements like background layers or navigation buttons here -->
     {% endblock %}
     
-    <!-- Main Container -->
+    <!-- Main Content -->
     <div class="container">
-        <!-- Main Content Block -->
         {% block content %}
-        <!-- Child templates will populate this block with page-specific content -->
         {% endblock %}
     </div>
     
     <!-- Extra Scripts Block -->
     {% block extra_scripts %}
-    <!-- Child templates can add additional JavaScript files or inline scripts here -->
     {% endblock %}
     
-    <!-- Bootstrap JS and Dependencies (Optional: Include if needed globally) -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <!-- Bootstrap JS and Dependencies (defer for non-essential scripts) -->
+    <script defer src="https://code.jquery.com/jquery-3.5.1.slim.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
