@@ -17,18 +17,17 @@ EveryVoter supports multiple voting methods to accommodate different voter prefe
 - **Voice-Based Voting**: Voice commands allow users to vote hands-free.
 - **Text-Based Voting**: Voters can also use text input to cast their votes.
 
-## Multilingual Support, Acessibility, & Built-In Chat
+## Vision-impaired Accessibility Support & Built-In Chat
 To bring everyone along, EveryVoter integrates LangChain and language models (LLMs) to:
-- Enable voting for non-English speaking users by translating the user interface and instructions into various languages.
-- Provide a multilingual experience.
-- Enable built-in chatbots to assist voters in their voting experience.
+- Enable voting methods for the vision impaired by text-to-speech candidate choices and 
+speak-to-vote functionality.
 
 ## Early Determination of Results
 EveryVoter implements logic to declare a winner once a candidate reaches the required number of votes before the end of the voting period. This feature allows for quicker determination of election outcomes, improving efficiency.
 
 ---
 
-EveryVoter is developed with a focus on the universe of potential voters, everywhere.
+EveryVoter is developed with a focus on remote voting for those who cast votes differently.
 
 ## Steps to Run the Application
 
