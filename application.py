@@ -1,3 +1,20 @@
+import warnings
+
+# Suppress specific Pydantic UserWarnings
+warnings.filterwarnings(
+    "ignore",
+    message="Valid config keys have changed in V2:",
+    category=UserWarning,
+    module='pydantic._internal._config'
+)
+
+warnings.filterwarnings(
+    "ignore",
+    message='Field "model_id" has conflict with protected namespace "model_".',
+    category=UserWarning,
+    module='pydantic._internal._fields'
+)
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
