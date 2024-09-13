@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from application import app  # Make sure to import your Flask app
 
-class test_AudioGenerationTestCases(unittest.TestCase):
+class AudioGenerationTestCases(unittest.TestCase):
 
     def setUp(self):
         """Set up the test client."""
