@@ -26,7 +26,7 @@ import difflib
 import openai
 from io import BytesIO
 import os
-from models import Election, Candidate, Vote
+from models.models import Election, Candidate, Vote
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'

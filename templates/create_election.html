@@ -74,6 +74,12 @@
         function generateCandidateFields() {
             let number_of_custom_candidates = document.getElementById("number_of_custom_candidates").value;
             let container = document.getElementById("custom_candidates_container");
+
+            if (isNaN(number_of_custom_candidates) || number_of_custom_candidates <= 0) {
+                alert('Please enter a valid number of candidates.');
+                return;
+            }
+
             container.innerHTML = ''; // Clear previous fields
             
             for (let i = 1; i <= number_of_custom_candidates; i++) {
