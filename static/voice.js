@@ -3,7 +3,12 @@ document.addEventListener("DOMContentLoaded", function () {
     const status = document.getElementById('voice-status');
     const transcriptOutput = document.getElementById('transcript-output');
     const recordingDuration = 2000; // Define recording duration (in milliseconds)
-    const electionId = document.getElementById('election-id')?.value; // Optional: Include election ID if available
+    const electionId = window.election_id || null; // Ensure election ID is available
+
+    if (!electionId) {
+        console.error("Election ID is missing. Ensure election is selected or ongoing.");
+        return;
+    }
 
     if (button && status && transcriptOutput) {
         console.log("All elements found, proceeding with voice recognition...");
@@ -44,10 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
             const formData = new FormData();
             formData.append('audio', audioBlob, 'voice_vote.wav');
-
-            if (electionId) {
-                formData.append('election_id', electionId);  // Include election ID if applicable
-            }
+            formData.append('election_id', electionId);  // Pass election ID
 
             updateButtonState('Processing...', true);
 
@@ -62,7 +64,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         async function processAudio(formData) {
-            const response = await fetch('/process_audio', { method: 'POST', body: formData });
+            const response = await fetch('/process_audio', { 
+                method: 'POST', 
+                body: formData 
+            });
             const data = await response.json();
 
             if (data.transcript) {
@@ -76,15 +81,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         async function submitTranscript(transcript) {
-            const payload = { transcript };
-            if (electionId) {
-                payload.election_id = electionId;  // Include election ID if applicable
-            }
-
             const response = await fetch('/voice_vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ transcript, election_id: electionId }) // Pass election ID
             });
 
             const data = await response.json();

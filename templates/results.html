@@ -5,16 +5,20 @@
 {% block content %}
     <h1 class="text-center my-4">Election Results</h1>
 
-    <div class="mt-4" id="results-container">
-        {% for candidate in results %}
-            <h4>{{ candidate.name }}</h4> <!-- Candidate names come from the database -->
-            <div class="progress mb-3">
-                <div class="progress-bar" role="progressbar" data-percentage="{{ candidate.vote_percentage }}" aria-valuenow="{{ candidate.vote_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ candidate.vote_percentage }}%
+    {% if results %}
+        <div class="mt-4" id="results-container">
+            {% for candidate, percentage in results.items() %}
+                <h4>{{ candidate }}</h4>
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" data-percentage="{{ percentage }}" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ percentage }}%
+                    </div>
                 </div>
-            </div>
-        {% endfor %}
-    </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-center text-warning">No results available for this election yet.</p>
+    {% endif %}
 
     <!-- Back to Voting Button -->
     <div class="text-center mt-5">

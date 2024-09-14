@@ -4,16 +4,22 @@
 
 {% block content %}
     <h1>Cast Your Vote</h1>
+    
     <form action="{{ url_for('vote') }}" method="POST">
+        <!-- Include hidden input for election ID -->
+        <input type="hidden" name="election_id" value="{{ election_id }}">
+        
         {% for candidate in candidates %}
             <div class="form-check">
-                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate.id }}" required> <!-- Updated to use candidate.id -->
+                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate }}" required>
                 <label class="form-check-label" for="candidate{{ loop.index }}">
-                    {{ candidate.name }} <!-- candidate.name from the database -->
+                    {{ candidate }}
                 </label>
             </div>
         {% endfor %}
+        
         <button type="submit" class="btn btn-primary mt-3">Submit Vote</button>
     </form>
+    
     <p><a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Back to Home</a></p>
 {% endblock %}

@@ -3,7 +3,7 @@
 {% block title %}Cast Your Vote{% endblock %}
 
 {% block pre_content %}
-    <!-- Placeholder for page-specific content -->
+    <!-- Placeholder for page specific content -->
 {% endblock %}
 
 {% block content %}
@@ -11,34 +11,19 @@
 
     <!-- Include debug status -->
     {% include 'partials/debug_status.html' %}
-
-    <!-- Ongoing Elections Dropdown -->
-    {% if elections %}
-        <form method="GET" action="{{ url_for('index') }}">
-            <div class="form-group">
-                <label for="electionSelect" class="text-light">Select Ongoing Election:</label>
-                <select id="electionSelect" name="election_id" class="form-control">
-                    {% for election in elections %}
-                        <option value="{{ election.id }}">{{ election.name }}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-primary mt-2">View Election</button>
-            </div>
-        </form>
-    {% else %}
-        <p class="text-center text-warning">No ongoing elections.</p>
-    {% endif %}
-
-    <!-- Candidates for Selected Election -->
-    {% if selected_election %}
+    
+    {% if candidates and election_status == 'ongoing' %}
         <form method="POST" action="/">
             <!-- Include remaining votes -->
             {% include 'partials/remaining_votes.html' %}
+            
+            <!-- Hidden field for election_id -->
+            <input type="hidden" name="election_id" value="{{ election_id }}">
 
             <div class="row justify-content-center">
-                {% for candidate in selected_election.candidates %}
+                {% for candidate in candidates %}
                     <div class="col-md-4 mb-2">
-                        <button type="submit" name="candidate" value="{{ candidate.id }}" class="btn btn-primary btn-block">{{ candidate.name }}</button>
+                        <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
                     </div>
                 {% endfor %}
             </div>
@@ -59,18 +44,22 @@
         <!-- Include voice voting section -->
         {% include 'partials/voice_voting.html' %}
     {% else %}
-        <p class="text-center text-warning">No candidates available for the selected election.</p>
+        <p class="text-center text-warning">No candidates available or election has not started yet.</p>
     {% endif %}
 
-    <!-- View Results -->
-    <a href="{{ url_for('results') }}?election_id={{ selected_election.id if selected_election else '' }}" class="btn btn-info btn-block mt-4">View Current Results</a>
+    <!-- If election has not started or has ended -->
+    {% if election_status == 'not_started' or election_status == 'ended' %}
+        <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
+        <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
+    {% endif %}
+
+    <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
 {% endblock %}
 
 {% block extra_scripts %}
-    <!-- Pass candidates data to JavaScript via hidden script -->
-    {% if selected_election %}
-        <script id="candidates-data" type="application/json">{{ selected_election.candidates|tojson }}</script>
-    {% endif %}
+    <!-- Pass candidates and election_id data to JavaScript via hidden script -->
+    <script id="candidates-data" type="application/json">{{ candidates|tojson }}</script>
+    <script id="election-id-data" type="application/json">{{ election_id|tojson }}</script>
 
     <script>
         // Handle "Introduce Candidates" button click
@@ -78,22 +67,26 @@
             var introduceButton = document.getElementById('introduceButton');
             var statusText = document.getElementById('statusText');
 
-            // Change button text to "Queued audio" and display "Grabbing the mic..."
+            // Change button text to "Listening..." and display "Grabbing the mic..."
             introduceButton.innerHTML = "Queued audio";
             statusText.style.display = "block";
+
+            // Get the election_id from the hidden script
+            const election_id = JSON.parse(document.getElementById('election-id-data').textContent);
 
             // Make a POST request to fetch the TTS audio for candidate introductions
             fetch('/generate-candidates-audio', {
                 method: 'POST',
-                body: JSON.stringify({ election_id: "{{ selected_election.id }}" }),
+                body: JSON.stringify({ election_id: election_id }),
                 headers: { 'Content-Type': 'application/json' }
             })
             .then(response => response.blob())  // Get the audio response as a blob
             .then(blob => {
+                // Set the audio player source to the returned blob
                 var audioURL = URL.createObjectURL(blob);
                 var audioPlayer = document.getElementById('audioPlayer');
                 audioPlayer.src = audioURL;
-                audioPlayer.play();
+                audioPlayer.play();  // Automatically play the audio
 
                 // Reset button text and hide "Grabbing the mic..." message
                 introduceButton.innerHTML = "Introduce Candidates";
@@ -101,6 +94,8 @@
             })
             .catch(error => {
                 console.error('Error:', error);
+
+                // Reset button text and hide "Grabbing the mic..." message if an error occurs
                 introduceButton.innerHTML = "Introduce Candidates";
                 statusText.style.display = "none";
             });
