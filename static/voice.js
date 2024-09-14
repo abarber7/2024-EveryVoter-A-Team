@@ -3,6 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const status = document.getElementById('voice-status');
     const transcriptOutput = document.getElementById('transcript-output');
     const recordingDuration = 2000; // Define recording duration (in milliseconds)
+    const electionId = document.getElementById('election-id')?.value; // Optional: Include election ID if available
 
     if (button && status && transcriptOutput) {
         console.log("All elements found, proceeding with voice recognition...");
@@ -44,6 +45,10 @@ document.addEventListener("DOMContentLoaded", function () {
             const formData = new FormData();
             formData.append('audio', audioBlob, 'voice_vote.wav');
 
+            if (electionId) {
+                formData.append('election_id', electionId);  // Include election ID if applicable
+            }
+
             updateButtonState('Processing...', true);
 
             try {
@@ -71,10 +76,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         async function submitTranscript(transcript) {
+            const payload = { transcript };
+            if (electionId) {
+                payload.election_id = electionId;  // Include election ID if applicable
+            }
+
             const response = await fetch('/voice_vote', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transcript })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();

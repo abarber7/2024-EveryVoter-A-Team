@@ -28,6 +28,14 @@
                 <label for="max_votes">Maximum Votes</label>
                 <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
             </div>
+            <div class="form-group">
+                <label for="admin_id">Admin ID</label> <!-- Link the admin who starts the election -->
+                <select class="form-control mb-2" id="admin_id" name="admin_id">
+                    {% for admin in admins %}
+                        <option value="{{ admin.id }}">{{ admin.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
             <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
         </form>
     {% elif category == 'custom' %}
@@ -45,6 +53,15 @@
                 <input type="number" class="form-control mb-2" id="max_votes_custom" name="max_votes_custom" min="1" required>
             </div>
 
+            <div class="form-group">
+                <label for="admin_id">Admin ID</label> <!-- Admin field added -->
+                <select class="form-control mb-2" id="admin_id" name="admin_id">
+                    {% for admin in admins %}
+                        <option value="{{ admin.id }}">{{ admin.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
             <button type="submit" class="btn btn-primary btn-block mb-2">Start Election with Custom Candidates</button>
         </form>
     {% endif %}
@@ -52,4 +69,22 @@
 
 {% block extra_scripts %}
     <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+    <script>
+        // Generates custom candidate input fields dynamically
+        function generateCandidateFields() {
+            let number_of_custom_candidates = document.getElementById("number_of_custom_candidates").value;
+            let container = document.getElementById("custom_candidates_container");
+            container.innerHTML = ''; // Clear previous fields
+            
+            for (let i = 1; i <= number_of_custom_candidates; i++) {
+                let candidateField = `
+                    <div class="form-group">
+                        <label for="candidate_${i}">Candidate ${i} Name</label>
+                        <input type="text" class="form-control mb-2" id="candidate_${i}" name="candidate_${i}" required>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', candidateField);
+            }
+        }
+    </script>
 {% endblock %}

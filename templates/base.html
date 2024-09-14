@@ -26,8 +26,14 @@
     {% endblock %}
 </head>
 <body>
-    <!-- Pre-Content Block (e.g., background layers, back buttons) -->
+    <!-- Pre-Content Block (e.g., background layers, admin controls, or back buttons) -->
     {% block pre_content %}
+        <!-- Example: Admin controls for starting/stopping elections could go here -->
+        {% if current_user.is_authenticated and current_user.is_admin %}
+            <div class="admin-controls text-center">
+                <a href="{{ url_for('admin_panel') }}" class="btn btn-warning">Admin Panel</a>
+            </div>
+        {% endif %}
     {% endblock %}
     
     <!-- Flash Messages -->

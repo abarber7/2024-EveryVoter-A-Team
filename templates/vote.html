@@ -7,9 +7,9 @@
     <form action="{{ url_for('vote') }}" method="POST">
         {% for candidate in candidates %}
             <div class="form-check">
-                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate }}" required>
+                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate.id }}" required> <!-- Updated to use candidate.id -->
                 <label class="form-check-label" for="candidate{{ loop.index }}">
-                    {{ candidate }}
+                    {{ candidate.name }} <!-- candidate.name from the database -->
                 </label>
             </div>
         {% endfor %}
