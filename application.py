@@ -22,6 +22,8 @@ from langchain.prompts import PromptTemplate
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import create_engine, text
 import difflib
 import openai
 from io import BytesIO
@@ -32,23 +34,49 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
 # Load environment variables from the .env file
+# Load environment variables from the .env file
 def load_env_vars():
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
-    db_uri = os.getenv("DATABASE_URL")
     elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+    db_connection_string = os.getenv("DATABASE_CONNECTION_STRING")
 
-    if not api_key or not db_uri or not elevenlabs_api_key:
+    if not api_key or not elevenlabs_api_key or not db_connection_string:
         raise ValueError("Missing required environment variables.")
 
-    return api_key, db_uri, elevenlabs_api_key
+    return api_key, elevenlabs_api_key, db_connection_string
 
 # Load environment variables
-api_key, db_uri, elevenlabs_api_key = load_env_vars()
+api_key, elevenlabs_api_key, db_connection_string= load_env_vars()
+app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_string
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 
-# Initialize Flask app and database
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+# Initialize SQLAlchemy instance
 db = SQLAlchemy(app)
+
+# Function to test database connection on startup
+def test_db_connection_on_startup():
+    try:
+        with app.app_context():  # Ensure the app context is available
+            result = db.session.execute(text("SELECT @@version"))
+            version_info = result.fetchone()
+            print(f"Database version: {version_info[0]}")
+    except SQLAlchemyError as e:
+        print(f"Error occurred during startup DB connection test: {str(e)}")
+
+# Test the connection automatically when the app starts
+test_db_connection_on_startup()
+
+# Route to test the database connection
+@app.route('/test-db-connection')
+def test_db_connection():
+    try:
+        # Execute a simple query to test the connection
+        result = db.session.execute(text("SELECT @@version"))
+        version_info = result.fetchone()
+        return f"Database version: {version_info[0]}"
+    except SQLAlchemyError as e:
+        return f"Error occurred: {str(e)}", 500
 
 # OpenAI and ElevenLabs initialization
 client = openai.OpenAI(api_key=api_key)
