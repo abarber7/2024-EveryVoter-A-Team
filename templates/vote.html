@@ -1,5 +1,3 @@
-<!-- vote.html -->
-
 {% extends "base.html" %}
 
 {% block title %}
@@ -46,6 +44,25 @@
     .submit-button:hover {
         background-color: #2ecc71;
     }
+
+    .tts-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #3498db;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    .tts-button:hover {
+        background-color: #2980b9;
+    }
+
+    #audio-introduction {
+        display: none;
+        margin-top: 20px;
+    }
 </style>
 {% endblock %}
 
@@ -64,5 +81,45 @@
         {% endfor %}
         <button type="submit" class="submit-button">Submit Vote</button>
     </form>
+
+    <!-- Button to introduce candidates -->
+    <button class="tts-button" id="introduce-candidates-btn" data-election-id="{{ election.id }}">Introduce Candidates</button>
+
+    <!-- Audio element to play the introduction -->
+    <audio id="audio-introduction" controls></audio>
 </div>
+
+<script>
+document.getElementById('introduce-candidates-btn').addEventListener('click', function() {
+    // Get the election ID from the data attribute
+    const electionId = this.getAttribute('data-election-id');
+    
+    // Fetch request to generate the audio
+    fetch('/generate-candidates-audio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ election_id: electionId }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Audio generation failed.');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        // Create a URL for the audio blob and set it as the source for the audio element
+        const audioElement = document.getElementById('audio-introduction');
+        const audioURL = URL.createObjectURL(blob);
+        audioElement.src = audioURL;
+        audioElement.style.display = 'block';
+        audioElement.play();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Audio introduction failed. Please try again.");
+    });
+});
+</script>
 {% endblock %}
