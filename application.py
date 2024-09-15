@@ -1,3 +1,5 @@
+# application.py
+
 import warnings
 
 # Suppress specific Pydantic UserWarnings
@@ -24,12 +26,11 @@ from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 import difflib
 import openai
 from io import BytesIO
 import os
-#from models.models import Election, Candidate, Vote
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -50,7 +51,7 @@ def load_env_vars():
     return api_key, elevenlabs_api_key, db_connection_string
 
 # Load environment variables
-api_key, elevenlabs_api_key, db_connection_string= load_env_vars()
+api_key, elevenlabs_api_key, db_connection_string = load_env_vars()
 app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_string
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 
@@ -64,9 +65,9 @@ from models.models import Election, Candidate, Vote
 def test_db_connection_on_startup():
     try:
         with app.app_context():  # Ensure the app context is available
-            result = db.session.execute(text("SELECT @@version"))
+            result = db.session.execute(text("SELECT 1"))
             version_info = result.fetchone()
-            print(f"Database version: {version_info[0]}")
+            print(f"Database connection successful: {version_info[0]}")
     except SQLAlchemyError as e:
         print(f"Error occurred during startup DB connection test: {str(e)}")
 
@@ -78,9 +79,9 @@ test_db_connection_on_startup()
 def test_db_connection():
     try:
         # Execute a simple query to test the connection
-        result = db.session.execute(text("SELECT @@version"))
+        result = db.session.execute(text("SELECT 1"))
         version_info = result.fetchone()
-        return f"Database version: {version_info[0]}"
+        return f"Database connection successful: {version_info[0]}"
     except SQLAlchemyError as e:
         return f"Error occurred: {str(e)}", 500
 
@@ -149,8 +150,8 @@ def get_restaurant_candidates(number_of_restaurants, city, state):
     return response.content.strip().split("\n")[:number_of_restaurants]
 
 # Start a new election
-def start_election(candidates, max_votes, election_type):
-    election = Election(election_type=election_type, max_votes=max_votes)
+def start_election(candidates, max_votes, election_type, election_name):
+    election = Election(election_name=election_name, election_type=election_type, max_votes=max_votes)
     db.session.add(election)
     db.session.commit()
 
@@ -161,31 +162,45 @@ def start_election(candidates, max_votes, election_type):
 
     return election.id
 
-# Route for starting a restaurant election
-@app.route("/start_restaurant_election", methods=["POST"])
-def start_restaurant_election():
-    city = request.form.get('city')
-    state = request.form.get('state')
-    number_of_restaurants = int(request.form.get('number_of_restaurants'))
-    max_votes = int(request.form.get('max_votes'))
+# Route for displaying the restaurant election setup page
+@app.route("/setup_restaurant_election", methods=["GET", "POST"])
+def setup_restaurant_election():
+    if request.method == "POST":
+        city = request.form.get('city')
+        state = request.form.get('state')
+        number_of_restaurants = int(request.form.get('number_of_restaurants'))
+        max_votes = int(request.form.get('max_votes'))
+        election_name = request.form.get('election_name')
 
-    candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-    election_id = start_election(candidates, max_votes, election_type="restaurant")
-    flash(f"Restaurant election started with ID {election_id}.", "info")
+        candidates = get_restaurant_candidates(number_of_restaurants, city, state)
+        election_id = start_election(candidates, max_votes, election_type="restaurant", election_name=election_name)
+        flash(f"Restaurant election '{election_name}' started with ID {election_id}.", "info")
 
-    return redirect(url_for("index"))
+        return redirect(url_for("index"))
+    else:
+        return render_template("restaurant_election.html")
 
-# Route for starting a custom election
-@app.route("/start_custom_election", methods=["POST"])
-def start_custom_election():
-    number_of_candidates = int(request.form.get('number_of_custom_candidates'))
-    max_votes = int(request.form.get('max_votes_custom'))
-    candidates = [request.form.get(f"candidate_{i+1}") for i in range(number_of_candidates)]
+# Route for displaying the custom election setup page
+@app.route("/setup_custom_election", methods=["GET", "POST"])
+def setup_custom_election():
+    if request.method == "POST":
+        max_votes = int(request.form.get('max_votes_custom'))
+        election_name = request.form.get('election_name')
+        candidate_names = request.form.getlist('candidate_names[]')
 
-    election_id = start_election(candidates, max_votes, election_type="custom")
-    flash(f"Custom election started with ID {election_id}.", "info")
+        # Remove empty candidate names
+        candidates = [name for name in candidate_names if name.strip() != ""]
 
-    return redirect(url_for("index"))
+        if not candidates:
+            flash("Please enter at least one candidate.", "error")
+            return redirect(url_for("setup_custom_election"))
+
+        election_id = start_election(candidates, max_votes, election_type="custom", election_name=election_name)
+        flash(f"Custom election '{election_name}' started with ID {election_id}.", "info")
+
+        return redirect(url_for("index"))
+    else:
+        return render_template("custom_election.html")
 
 # Process voice voting (Whisper API)
 @app.route("/process_audio", methods=["POST"])
@@ -245,7 +260,7 @@ def results(election_id):
         for candidate in election.candidates
     }
 
-    return render_template("results.html", results=results_percentage)
+    return render_template("results.html", results=results_percentage, election_name=election.election_name)
 
 # Main route to display voting options
 @app.route("/", methods=["GET", "POST"])

@@ -1,0 +1,30 @@
+<!-- restaurant_election.html -->
+
+{% extends "base.html" %}
+
+{% block title %}
+    Set Up Restaurant Election
+{% endblock %}
+
+{% block content %}
+<h1>Set Up a Restaurant Election</h1>
+
+<form action="{{ url_for('setup_restaurant_election') }}" method="POST">
+    <label for="election_name">Election Name:</label><br>
+    <input type="text" id="election_name" name="election_name" required><br><br>
+
+    <label for="city">City:</label><br>
+    <input type="text" id="city" name="city" required><br><br>
+
+    <label for="state">State:</label><br>
+    <input type="text" id="state" name="state" required><br><br>
+
+    <label for="number_of_restaurants">Number of Restaurants:</label><br>
+    <input type="number" id="number_of_restaurants" name="number_of_restaurants" min="1" required><br><br>
+
+    <label for="max_votes">Maximum Votes:</label><br>
+    <input type="number" id="max_votes" name="max_votes" min="1" required><br><br>
+
+    <input type="submit" value="Start Election">
+</form>
+{% endblock %}

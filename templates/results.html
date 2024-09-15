@@ -1,39 +1,24 @@
+<!-- results.html -->
+
 {% extends "base.html" %}
 
-{% block title %}Election Results{% endblock %}
-
-{% block content %}
-    <h1 class="text-center my-4">Election Results</h1>
-
-    {% if results %}
-        <div class="mt-4" id="results-container">
-            {% for candidate, percentage in results.items() %}
-                <h4>{{ candidate }}</h4>
-                <div class="progress mb-3">
-                    <div class="progress-bar" role="progressbar" data-percentage="{{ percentage }}" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
-                        {{ percentage }}%
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <p class="text-center text-warning">No results available for this election yet.</p>
-    {% endif %}
-
-    <!-- Back to Voting Button -->
-    <div class="text-center mt-5">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Voting</a>
-    </div>
+{% block title %}
+    Election Results - {{ election_name }}
 {% endblock %}
 
-{% block extra_scripts %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const progressBars = document.querySelectorAll('.progress-bar');
-            progressBars.forEach(function (bar) {
-                const percentage = bar.getAttribute('data-percentage');
-                bar.style.width = percentage + '%';
-            });
-        });
-    </script>
+{% block content %}
+<h1>Election Results - {{ election_name }}</h1>
+
+<table border="1">
+    <tr>
+        <th>Candidate</th>
+        <th>Percentage of Votes</th>
+    </tr>
+    {% for candidate, percentage in results.items() %}
+    <tr>
+        <td>{{ candidate }}</td>
+        <td>{{ percentage | round(2) }}%</td>
+    </tr>
+    {% endfor %}
+</table>
 {% endblock %}

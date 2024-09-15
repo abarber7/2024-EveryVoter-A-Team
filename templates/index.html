@@ -1,62 +1,76 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Remote Voting Application</title>
-</head>
-<body>
-    <h1>Welcome to the Remote Voting Application</h1>
+{% extends "base.html" %}
 
-    <!-- Display ongoing elections -->
-    <h2>Ongoing Elections</h2>
+{% block title %}
+    Welcome to EveryVoter
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .election-options {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start; /* Align content to the top */
+        align-items: center;
+        height: 100vh; /* Full screen height */
+        padding-top: 50px; /* Adjust padding to control the space from the top */
+    }
+
+    h1 {
+        margin-bottom: 40px;
+        font-size: 2.5em;
+        text-align: center;
+    }
+
+    .election-button {
+        margin: 20px;
+        padding: 15px 30px;
+        font-size: 18px;
+        color: white;
+        background-color: #2980b9; /* Blue button */
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 250px;
+        text-align: center;
+    }
+
+    .election-button:hover {
+        background-color: #3498db; /* Lighter blue on hover */
+    }
+
+    .election-dropdown {
+        margin-bottom: 40px;
+        font-size: 18px;
+        padding: 10px;
+        width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="election-options">
+    <h1>Choose Your Election</h1>
+
+    <!-- Dropdown for Ongoing Elections -->
     {% if elections %}
-        <ul>
+        <select class="election-dropdown" onchange="location = this.value;">
+            <option value="" disabled selected>View Ongoing Elections</option>
             {% for election in elections %}
-                <li>
-                    Election ID: {{ election.id }} - Type: {{ election.election_type }}
-                    <a href="{{ url_for('results', election_id=election.id) }}">View Results</a>
-                </li>
+                <option value="{{ url_for('results', election_id=election.id) }}">{{ election.election_name }}</option>
             {% endfor %}
-        </ul>
+        </select>
     {% else %}
         <p>No ongoing elections at the moment.</p>
     {% endif %}
 
-    <!-- Form to start a restaurant election -->
-    <h2>Start a Restaurant Election</h2>
-    <form action="{{ url_for('start_restaurant_election') }}" method="POST">
-        <label for="city">City:</label>
-        <input type="text" name="city" id="city" required><br>
+    <!-- Buttons for creating new elections -->
+    <a href="{{ url_for('setup_restaurant_election') }}">
+        <button class="election-button">Restaurant Election</button>
+    </a>
 
-        <label for="state">State:</label>
-        <input type="text" name="state" id="state" required><br>
-
-        <label for="number_of_restaurants">Number of Restaurants:</label>
-        <input type="number" name="number_of_restaurants" id="number_of_restaurants" min="1" required><br>
-
-        <label for="max_votes">Maximum Votes Per User:</label>
-        <input type="number" name="max_votes" id="max_votes" min="1" required><br>
-
-        <button type="submit">Start Restaurant Election</button>
-    </form>
-
-    <!-- Form to start a custom election -->
-    <h2>Start a Custom Election</h2>
-    <form action="{{ url_for('start_custom_election') }}" method="POST">
-        <label for="number_of_custom_candidates">Number of Candidates:</label>
-        <input type="number" name="number_of_custom_candidates" id="number_of_custom_candidates" min="1" required><br>
-
-        <!-- Dynamically create fields for candidate names -->
-        <label for="candidate_1">Candidate 1:</label>
-        <input type="text" name="candidate_1" id="candidate_1" required><br>
-
-        <!-- Add more candidate input fields as necessary -->
-
-        <label for="max_votes_custom">Maximum Votes Per User:</label>
-        <input type="number" name="max_votes_custom" id="max_votes_custom" min="1" required><br>
-
-        <button type="submit">Start Custom Election</button>
-    </form>
-</body>
-</html>
+    <a href="{{ url_for('setup_custom_election') }}">
+        <button class="election-button">Custom Election</button>
+    </a>
+</div>
+{% endblock %}

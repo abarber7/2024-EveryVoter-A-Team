@@ -1,0 +1,49 @@
+<!-- custom_election.html -->
+
+{% extends "base.html" %}
+
+{% block title %}
+    Set Up Custom Election
+{% endblock %}
+
+{% block content %}
+<h1>Set Up a Custom Election</h1>
+
+<form action="{{ url_for('setup_custom_election') }}" method="POST">
+    <label for="election_name">Election Name:</label><br>
+    <input type="text" id="election_name" name="election_name" required><br><br>
+
+    <label for="max_votes_custom">Maximum Votes:</label><br>
+    <input type="number" id="max_votes_custom" name="max_votes_custom" min="1" required><br><br>
+
+    <label>Candidate Names:</label><br>
+    <div id="candidate-container">
+        <input type="text" name="candidate_names[]" required><br>
+    </div>
+    <button type="button" onclick="addCandidate()">Add Candidate</button>
+    <button type="button" onclick="removeCandidate()">Remove Candidate</button><br><br>
+
+    <input type="submit" value="Start Election">
+</form>
+
+<script>
+function addCandidate() {
+    var container = document.getElementById('candidate-container');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'candidate_names[]';
+    input.required = true;
+    container.appendChild(input);
+    container.appendChild(document.createElement('br'));
+}
+
+function removeCandidate() {
+    var container = document.getElementById('candidate-container');
+    var inputs = container.getElementsByTagName('input');
+    if (inputs.length > 1) {
+        container.removeChild(inputs[inputs.length - 1]);
+        container.removeChild(container.lastChild); // Remove the <br> element
+    }
+}
+</script>
+{% endblock %}

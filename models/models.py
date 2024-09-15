@@ -5,6 +5,7 @@ class Election(db.Model):
     __tablename__ = 'elections'
 
     id = db.Column(db.Integer, primary_key=True)
+    election_name = db.Column(db.String(100), nullable=False, unique=True)  # Unique election name
     election_type = db.Column(db.String(50), nullable=False)
     max_votes = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(20), default='ongoing')  # Options: 'ongoing', 'ended'
