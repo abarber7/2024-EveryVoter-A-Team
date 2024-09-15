@@ -104,9 +104,24 @@ def generate_gpt4_text_introduction(election):
     introductions = []
     for index, candidate in enumerate(election.candidates, start=1):
         gpt_text = model.invoke(f"""In a quirky and enthusiastic tone, welcome {candidate.name} to a show in a few words. 
-                                    Example: Introducing first, the animated and lively Tony Hawk!""")
+                                    Example:
+                                    Introducing first, the animated and lively Tony Hawk!
+                                    Introducing second, the wonderful and endearing Mariah Carey!
+                                    Introduce them as follows:
+                                    Introducing {ordinal(index)}, the animated and lively Tony Hawk!""")
         introductions.append(gpt_text.content)
     return introductions
+
+def ordinal(n):
+    """Helper function to return ordinal of a number (e.g., 1st, 2nd, 3rd)."""
+    if isinstance(n, int):  # Ensure n is an integer
+        if 10 <= n % 100 <= 20:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
+        return f"{n}{suffix}"
+    else:
+        raise ValueError(f"Expected integer, got {type(n)}")
 
 # Generate audio for candidate introductions using ElevenLabs API
 @app.route('/generate-candidates-audio', methods=['POST'])
