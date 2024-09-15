@@ -8,7 +8,7 @@
 <style>
     .back-button {
         position: absolute;
-        top: 20px;
+        top: 10px; /* Move the back button up */
         left: 20px;
         background-color: #e74c3c;
         color: white;
@@ -26,19 +26,62 @@
         text-align: center;
     }
 
+    /* Candidate Styling */
     .candidate-option {
-        margin: 10px;
-        font-size: 18px;
+        margin: 15px;
+        padding: 20px;
+        font-size: 24px;
+        background-color: #f9f9f9;
+        border: 2px solid #2980b9;
+        border-radius: 10px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        color: black;
+        position: relative;
     }
 
-    .submit-button {
+    .candidate-option:hover {
+        background-color: #d6eaf8;
+    }
+
+    /* Hide the radio input */
+    .candidate-option input {
+        display: none;
+    }
+
+    /* Style the label and make it take the entire space */
+    .candidate-option label {
+        width: 100%;
+        display: block;
+        color: black;
+        cursor: pointer;
+    }
+
+    /* Add a checkmark when a candidate is selected */
+    .candidate-option input:checked + label::after {
+        content: '✓'; /* Unicode for checkmark */
+        font-size: 30px;
+        color: green;
+        position: absolute;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+    }
+
+    .submit-button, .tts-button, .voice-button, .progress-button {
         margin-top: 20px;
         padding: 10px 20px;
         font-size: 18px;
-        background-color: #27ae60;
         color: white;
         border: none;
         border-radius: 5px;
+        width: 250px;
+        display: inline-block;
+    }
+
+    .submit-button {
+        background-color: #27ae60;
     }
 
     .submit-button:hover {
@@ -46,13 +89,7 @@
     }
 
     .tts-button {
-        margin-top: 20px;
-        padding: 10px 20px;
-        font-size: 18px;
         background-color: #3498db;
-        color: white;
-        border: none;
-        border-radius: 5px;
     }
 
     .tts-button:hover {
@@ -60,17 +97,22 @@
     }
 
     .voice-button {
-        margin-top: 20px;
-        padding: 10px 20px;
-        font-size: 18px;
         background-color: #8e44ad;
-        color: white;
-        border: none;
-        border-radius: 5px;
+        display: block; /* Align directly underneath */
+        margin: 20px auto 0; /* Center it */
     }
 
     .voice-button:hover {
         background-color: #71368a;
+    }
+
+    .progress-button {
+        background-color: #e67e22;
+        float: right;
+    }
+
+    .progress-button:hover {
+        background-color: #d35400;
     }
 
     #audio-introduction {
@@ -111,6 +153,9 @@
 
     <!-- Voice Voting Button -->
     <button class="voice-button" id="vote-by-voice-btn" data-election-id="{{ election.id }}">Vote by Voice</button>
+
+    <!-- Button to view election progress -->
+    <a href="{{ url_for('results', election_id=election.id) }}" class="progress-button">View Election Progress</a>
 </div>
 
 <script>
