@@ -148,7 +148,11 @@ document.getElementById('introduce-candidates-btn').addEventListener('click', fu
 // Voice voting functionality
 document.getElementById('vote-by-voice-btn').addEventListener('click', function() {
     const electionId = this.getAttribute('data-election-id');
-    
+    const voiceButton = this; // Reference to the button
+
+    // Change button text to "Listening..."
+    voiceButton.innerHTML = "Listening...";
+
     if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
         alert('Your browser does not support voice recognition.');
         return;
@@ -181,16 +185,22 @@ document.getElementById('vote-by-voice-btn').addEventListener('click', function(
         .then(response => response.json())
         .then(data => {
             alert(data.message);
+            // Reset button text back to "Vote by Voice" after voting
+            voiceButton.innerHTML = "Vote by Voice";
         })
         .catch(error => {
             console.error('Error:', error);
             alert('Voice voting failed. Please try again.');
+            // Reset button text back to "Vote by Voice" in case of error
+            voiceButton.innerHTML = "Vote by Voice";
         });
     };
 
     recognition.onerror = function(event) {
         console.error('Recognition error:', event.error);
         alert('Error during voice recognition. Please try again.');
+        // Reset button text back to "Vote by Voice" in case of error
+        voiceButton.innerHTML = "Vote by Voice";
     };
 
     recognition.start();
