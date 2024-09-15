@@ -1,20 +1,25 @@
-# test_audio_processing.py
-
 import unittest
 from unittest.mock import patch, MagicMock
 from io import BytesIO
-
-from application import app
+from application import app, db  # Import the app and database
+from models.models import Election
 
 class AudioProcessingTestCases(unittest.TestCase):
 
     def setUp(self):
-        """Set up the test client."""
+        """Set up the test client and push application context."""
         self.app = app.test_client()
         self.app.testing = True
+        self.app_context = app.app_context()
+        self.app_context.push()  # Push the application context
+
+    def tearDown(self):
+        """Pop the application context after the test."""
+        self.app_context.pop()
 
     @patch('application.client.audio.transcriptions.create')
-    def test_process_audio_success(self, mock_transcribe):
+    @patch('application.db.session')  # Mock database session if needed
+    def test_process_audio_success(self, mock_db_session, mock_transcribe):
         """Test processing a valid audio file."""
         # Mock the OpenAI transcription response
         mock_transcribe.return_value = MagicMock(text='Alice')
