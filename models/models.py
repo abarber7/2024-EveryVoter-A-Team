@@ -1,7 +1,5 @@
-from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
-db = SQLAlchemy()
+from application import db
 
 class Election(db.Model):
     __tablename__ = 'elections'
@@ -24,6 +22,8 @@ class Candidate(db.Model):
 
     votes = db.relationship('Vote', backref='candidate', lazy=True)
 
+    __table_args__ = (db.UniqueConstraint('election_id', 'name', name='unique_candidate_per_election'),)
+
 class Vote(db.Model):
     __tablename__ = 'votes'
 
@@ -31,4 +31,3 @@ class Vote(db.Model):
     candidate_id = db.Column(db.Integer, db.ForeignKey('candidates.id'), nullable=False)
     election_id = db.Column(db.Integer, db.ForeignKey('elections.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-

@@ -22,18 +22,21 @@ from langchain.prompts import PromptTemplate
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import create_engine, text
 import difflib
 import openai
 from io import BytesIO
 import os
-from models.models import Election, Candidate, Vote
+#from models.models import Election, Candidate, Vote
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Load environment variables from the .env file
+# Initialize SQLAlchemy instance (without app)
+db = SQLAlchemy()
+
 # Load environment variables from the .env file
 def load_env_vars():
     load_dotenv()
@@ -51,8 +54,11 @@ api_key, elevenlabs_api_key, db_connection_string= load_env_vars()
 app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_string
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 
-# Initialize SQLAlchemy instance
-db = SQLAlchemy(app)
+# Bind SQLAlchemy to app
+db.init_app(app)
+migrate = Migrate(app, db)
+
+from models.models import Election, Candidate, Vote
 
 # Function to test database connection on startup
 def test_db_connection_on_startup():
