@@ -40,6 +40,12 @@
         text-align: center;
         border: 1px solid #ddd;
     }
+
+    /* Additional styles for the chart */
+    .chart-container {
+        width: 60%;
+        margin: 40px auto;
+    }
 </style>
 {% endblock %}
 
@@ -60,4 +66,44 @@
     </tr>
     {% endfor %}
 </table>
+
+<div class="chart-container">
+    <canvas id="resultsChart"></canvas>
+</div>
+
+<!-- Include Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Prepare data for the chart using a safe stringified JSON
+    var data = JSON.parse('{{ results | tojson | safe }}');
+    var candidates = Object.keys(data);
+    var percentages = Object.values(data);
+
+    var ctx = document.getElementById('resultsChart').getContext('2d');
+    var resultsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: candidates,
+            datasets: [{
+                label: 'Percentage of Votes',
+                data: percentages,
+                backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                borderColor: 'rgba(41, 128, 185, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 10
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}
