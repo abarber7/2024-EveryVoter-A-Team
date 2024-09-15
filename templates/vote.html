@@ -59,9 +59,30 @@
         background-color: #2980b9;
     }
 
+    .voice-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #8e44ad;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    .voice-button:hover {
+        background-color: #71368a;
+    }
+
     #audio-introduction {
         display: none;
         margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+
+    #audio-container {
+        text-align: center;
     }
 </style>
 {% endblock %}
@@ -83,15 +104,18 @@
     </form>
 
     <!-- Button to introduce candidates -->
-    <button class="tts-button" id="introduce-candidates-btn" data-election-id="{{ election.id }}">Introduce Candidates</button>
+    <div id="audio-container">
+        <button class="tts-button" id="introduce-candidates-btn" data-election-id="{{ election.id }}">Introduce Candidates</button>
+        <audio id="audio-introduction" controls></audio>
+    </div>
 
-    <!-- Audio element to play the introduction -->
-    <audio id="audio-introduction" controls></audio>
+    <!-- Voice Voting Button -->
+    <button class="voice-button" id="vote-by-voice-btn" data-election-id="{{ election.id }}">Vote by Voice</button>
 </div>
 
 <script>
+// TTS for candidate introductions
 document.getElementById('introduce-candidates-btn').addEventListener('click', function() {
-    // Get the election ID from the data attribute
     const electionId = this.getAttribute('data-election-id');
     
     // Fetch request to generate the audio
@@ -109,7 +133,6 @@ document.getElementById('introduce-candidates-btn').addEventListener('click', fu
         return response.blob();
     })
     .then(blob => {
-        // Create a URL for the audio blob and set it as the source for the audio element
         const audioElement = document.getElementById('audio-introduction');
         const audioURL = URL.createObjectURL(blob);
         audioElement.src = audioURL;
@@ -120,6 +143,57 @@ document.getElementById('introduce-candidates-btn').addEventListener('click', fu
         console.error('Error:', error);
         alert("Audio introduction failed. Please try again.");
     });
+});
+
+// Voice voting functionality
+document.getElementById('vote-by-voice-btn').addEventListener('click', function() {
+    const electionId = this.getAttribute('data-election-id');
+    
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        alert('Your browser does not support voice recognition.');
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onstart = function() {
+        console.log('Voice recognition started. Speak the name of the candidate.');
+    };
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log('You voted for: ', transcript);
+
+        // Send the transcript to the server for matching and voting
+        fetch('/voice_vote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                election_id: electionId,
+                transcript: transcript
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Voice voting failed. Please try again.');
+        });
+    };
+
+    recognition.onerror = function(event) {
+        console.error('Recognition error:', event.error);
+        alert('Error during voice recognition. Please try again.');
+    };
+
+    recognition.start();
 });
 </script>
 {% endblock %}
