@@ -1,3 +1,5 @@
+<!-- index.html -->
+
 {% extends "base.html" %}
 
 {% block title %}
@@ -9,10 +11,10 @@
     .election-options {
         display: flex;
         flex-direction: column;
-        justify-content: flex-start; /* Align content to the top */
+        justify-content: flex-start;
         align-items: center;
-        height: 100vh; /* Full screen height */
-        padding-top: 50px; /* Adjust padding to control the space from the top */
+        height: 100vh;
+        padding-top: 50px;
     }
 
     h1 {
@@ -26,24 +28,32 @@
         padding: 15px 30px;
         font-size: 18px;
         color: white;
-        background-color: #2980b9; /* Blue button */
+        background-color: #2980b9;
         border: none;
         border-radius: 8px;
         cursor: pointer;
         transition: background-color 0.3s ease;
         width: 250px;
         text-align: center;
+        text-decoration: none;
     }
 
     .election-button:hover {
-        background-color: #3498db; /* Lighter blue on hover */
+        background-color: #3498db;
     }
 
-    .election-dropdown {
-        margin-bottom: 40px;
+    .election-link {
+        margin: 5px;
         font-size: 18px;
-        padding: 10px;
-        width: 300px;
+    }
+
+    .election-link a {
+        text-decoration: none;
+        color: #2980b9;
+    }
+
+    .election-link a:hover {
+        text-decoration: underline;
     }
 </style>
 {% endblock %}
@@ -52,25 +62,25 @@
 <div class="election-options">
     <h1>Choose Your Election</h1>
 
-    <!-- Dropdown for Ongoing Elections -->
+    <!-- Links for Ongoing Elections -->
     {% if elections %}
-        <select class="election-dropdown" onchange="location = this.value;">
-            <option value="" disabled selected>View Ongoing Elections</option>
-            {% for election in elections %}
-                <option value="{{ url_for('results', election_id=election.id) }}">{{ election.election_name }}</option>
-            {% endfor %}
-        </select>
+        <h2>Ongoing Elections</h2>
+        {% for election in elections %}
+            <div class="election-link">
+                <a href="{{ url_for('vote', election_id=election.id) }}">{{ election.election_name }}</a>
+            </div>
+        {% endfor %}
     {% else %}
         <p>No ongoing elections at the moment.</p>
     {% endif %}
 
     <!-- Buttons for creating new elections -->
-    <a href="{{ url_for('setup_restaurant_election') }}">
-        <button class="election-button">Restaurant Election</button>
+    <a href="{{ url_for('setup_restaurant_election') }}" class="election-button">
+        Restaurant Election
     </a>
 
-    <a href="{{ url_for('setup_custom_election') }}">
-        <button class="election-button">Custom Election</button>
+    <a href="{{ url_for('setup_custom_election') }}" class="election-button">
+        Custom Election
     </a>
 </div>
 {% endblock %}

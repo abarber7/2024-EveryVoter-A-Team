@@ -1,25 +1,68 @@
+<!-- vote.html -->
+
 {% extends "base.html" %}
 
-{% block title %}Vote - EveryVoter{% endblock %}
+{% block title %}
+    Vote in {{ election.election_name }}
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 10px 15px;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .back-button:hover {
+        background-color: #c0392b;
+    }
+
+    .vote-container {
+        margin-top: 60px;
+        text-align: center;
+    }
+
+    .candidate-option {
+        margin: 10px;
+        font-size: 18px;
+    }
+
+    .submit-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    .submit-button:hover {
+        background-color: #2ecc71;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <h1>Cast Your Vote</h1>
-    
-    <form action="{{ url_for('vote') }}" method="POST">
-        <!-- Include hidden input for election ID -->
-        <input type="hidden" name="election_id" value="{{ election_id }}">
-        
-        {% for candidate in candidates %}
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate }}" required>
-                <label class="form-check-label" for="candidate{{ loop.index }}">
-                    {{ candidate }}
-                </label>
+<a href="{{ url_for('index') }}" class="back-button">Back</a>
+
+<div class="vote-container">
+    <h1>Vote in {{ election.election_name }}</h1>
+
+    <form action="{{ url_for('vote', election_id=election.id) }}" method="POST">
+        {% for candidate in election.candidates %}
+            <div class="candidate-option">
+                <input type="radio" id="candidate_{{ candidate.id }}" name="candidate" value="{{ candidate.id }}">
+                <label for="candidate_{{ candidate.id }}">{{ candidate.name }}</label>
             </div>
         {% endfor %}
-        
-        <button type="submit" class="btn btn-primary mt-3">Submit Vote</button>
+        <button type="submit" class="submit-button">Submit Vote</button>
     </form>
-    
-    <p><a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Back to Home</a></p>
+</div>
 {% endblock %}

@@ -202,6 +202,35 @@ def setup_custom_election():
     else:
         return render_template("custom_election.html")
 
+# Route to display the voting page for an election
+@app.route("/vote/<int:election_id>", methods=["GET", "POST"])
+def vote(election_id):
+    election = Election.query.get(election_id)
+    if not election or election.status != 'ongoing':
+        flash("Election not found or has ended.", "error")
+        return redirect(url_for("index"))
+
+    if request.method == "POST":
+        candidate_id = request.form.get('candidate')
+        if candidate_id:
+            vote = Vote(candidate_id=candidate_id, election_id=election_id)
+            db.session.add(vote)
+            db.session.commit()
+
+            # Check if max votes reached
+            total_votes = len(election.votes)
+            if total_votes >= election.max_votes:
+                election.status = 'ended'
+                db.session.commit()
+                flash("Maximum votes reached. The election has ended.", "info")
+                return redirect(url_for('results', election_id=election_id))
+
+            flash("Your vote has been recorded.", "success")
+            return redirect(url_for('index'))
+        else:
+            flash("Please select a candidate.", "error")
+    return render_template("vote.html", election=election)
+
 # Process voice voting (Whisper API)
 @app.route("/process_audio", methods=["POST"])
 def process_audio():

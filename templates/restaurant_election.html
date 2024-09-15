@@ -6,7 +6,52 @@
     Set Up Restaurant Election
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 10px 15px;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .back-button:hover {
+        background-color: #c0392b;
+    }
+
+    form {
+        margin-top: 60px;
+        text-align: center;
+    }
+
+    input[type="text"], input[type="number"] {
+        width: 300px;
+        padding: 10px;
+        margin: 5px;
+    }
+
+    input[type="submit"] {
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #2ecc71;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<a href="{{ url_for('index') }}" class="back-button">Back</a>
+
 <h1>Set Up a Restaurant Election</h1>
 
 <form action="{{ url_for('setup_restaurant_election') }}" method="POST">
