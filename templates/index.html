@@ -62,6 +62,13 @@
 <div class="election-options">
     <h1>Choose Your Election</h1>
 
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}!</p>
+        <a href="{{ url_for('logout') }}">Log Out</a>
+    {% else %}
+        <p>Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">sign up</a> to vote in an election.</p>
+    {% endif %}
+
     <!-- Links for Ongoing Elections -->
     {% if elections %}
         <h2>Ongoing Elections</h2>

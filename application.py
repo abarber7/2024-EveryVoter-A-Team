@@ -24,6 +24,8 @@ from langchain.prompts import PromptTemplate
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_login import login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import text
@@ -59,7 +61,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tra
 db.init_app(app)
 migrate = Migrate(app, db)
 
-from models.models import Election, Candidate, Vote
+from models.models import Election, Candidate, Vote, User, UserVote
 
 # Function to test database connection on startup
 def test_db_connection_on_startup():
@@ -98,6 +100,69 @@ restaurant_prompt_template = PromptTemplate(
         " List each restaurant name on a new line."
     )
 )
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Check if the username is unique
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username already taken. Please choose another one.', 'error')
+            return redirect(url_for('register'))
+
+        # Create and save the new user
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Find the user by username
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'error')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('index'))
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Redirect to login page if not authenticated
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
+
 
 # Helper function for generating GPT-4 introductions
 def generate_gpt4_text_introduction(election):
@@ -219,32 +284,39 @@ def setup_custom_election():
 
 # Route to display the voting page for an election
 @app.route("/vote/<int:election_id>", methods=["GET", "POST"])
+@login_required  # Ensure the user is logged in
 def vote(election_id):
     election = Election.query.get(election_id)
+    
     if not election or election.status != 'ongoing':
         flash("Election not found or has ended.", "error")
         return redirect(url_for("index"))
 
+    # Check if the user has already voted
+    existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
+    if existing_vote:
+        flash('You have already voted in this election.', 'error')
+        return redirect(url_for('results', election_id=election_id))
+
     if request.method == "POST":
         candidate_id = request.form.get('candidate')
         if candidate_id:
+            # Record the vote
             vote = Vote(candidate_id=candidate_id, election_id=election_id)
             db.session.add(vote)
-            db.session.commit()
 
-            # Check if max votes reached
-            total_votes = len(election.votes)
-            if total_votes >= election.max_votes:
-                election.status = 'ended'
-                db.session.commit()
-                flash("Maximum votes reached. The election has ended.", "info")
-                return redirect(url_for('results', election_id=election_id))
+            # Record the user vote to prevent multiple voting
+            user_vote = UserVote(user_id=current_user.id, election_id=election_id)
+            db.session.add(user_vote)
+            db.session.commit()
 
             flash("Your vote has been recorded.", "success")
             return redirect(url_for('index'))
         else:
             flash("Please select a candidate.", "error")
+    
     return render_template("vote.html", election=election)
+
 
 # Process voice voting (Whisper API)
 @app.route("/process_audio", methods=["POST"])

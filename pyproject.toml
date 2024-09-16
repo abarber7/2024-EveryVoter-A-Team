@@ -20,6 +20,7 @@ string-similarity = "^0.0.2"
 elevenlabs = "^1.8.0"
 pyodbc = "^5.1.0"
 flask-migrate = "^4.0.7"
+flask-login = "^0.6.3"
 
 
 [build-system]
