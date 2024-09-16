@@ -344,6 +344,7 @@ def process_audio():
 
 # Submit voice vote
 @app.route("/voice_vote", methods=["POST"])
+@login_required  # Ensure the user is logged in
 def voice_vote():
     data = request.get_json()
     transcript = data.get("transcript").lower()
@@ -353,12 +354,25 @@ def voice_vote():
     if not election or election.status != 'ongoing':
         return jsonify({"message": "No active election."}), 400
 
+    # Check if the user has already voted
+    existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
+    if existing_vote:
+        return jsonify({"message": "You have already voted in this election."}), 400
+
+    # Find the matching candidate
     candidate_match = difflib.get_close_matches(transcript, [c.name.lower() for c in election.candidates], n=1, cutoff=0.7)
     if candidate_match:
         candidate = Candidate.query.filter_by(name=candidate_match[0], election_id=election_id).first()
+
+        # Record the vote
         vote = Vote(candidate_id=candidate.id, election_id=election_id)
         db.session.add(vote)
+
+        # Record the user vote to prevent multiple voting
+        user_vote = UserVote(user_id=current_user.id, election_id=election_id)
+        db.session.add(user_vote)
         db.session.commit()
+
         return jsonify({"message": f"Thank you! Your vote for {candidate.name} has been submitted."}), 200
     else:
         return jsonify({"message": "Candidate not recognized."}), 400
