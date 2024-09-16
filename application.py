@@ -1,3 +1,5 @@
+# application.py
+
 import warnings
 
 # Suppress specific Pydantic UserWarnings
@@ -22,72 +24,157 @@ from langchain.prompts import PromptTemplate
 from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
+from flask_login import login_user, login_required, logout_user, current_user
+from flask_migrate import Migrate
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import text
 import difflib
 import openai
-from io import BytesIO 
+from io import BytesIO
 import os
-from models.election_state import ElectionState
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Load environment variables from the .env file for security and flexibility
+# Initialize SQLAlchemy instance (without app)
+db = SQLAlchemy()
+
+# Load environment variables from the .env file
 def load_env_vars():
-    """
-    Load and validate environment variables.
-    """
     load_dotenv()
     api_key = os.getenv("OPENAI_API_KEY")
-    db_uri = os.getenv("DATABASE_URL")
     elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
+    db_connection_string = os.getenv("DATABASE_CONNECTION_STRING")
 
-    if not api_key:
-        raise ValueError("API key not found. Ensure OPENAI_API_KEY is set in your environment.")
+    if not api_key or not elevenlabs_api_key or not db_connection_string:
+        raise ValueError("Missing required environment variables.")
 
-    return api_key, db_uri, elevenlabs_api_key
+    return api_key, elevenlabs_api_key, db_connection_string
 
 # Load environment variables
-api_key, db_uri, elevenlabs_api_key = load_env_vars()
-# Initialize OpenAI client with API key
-client = openai.OpenAI(api_key=api_key)
+api_key, elevenlabs_api_key, db_connection_string = load_env_vars()
+app.config['SQLALCHEMY_DATABASE_URI'] = db_connection_string
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # Disable modification tracking
 
-# Initialize the GPT-4 model via LangChain for generating restaurant candidates
+# Bind SQLAlchemy to app
+db.init_app(app)
+migrate = Migrate(app, db)
+
+from models.models import Election, Candidate, Vote, User, UserVote
+
+# Function to test database connection on startup
+def test_db_connection_on_startup():
+    try:
+        with app.app_context():  # Ensure the app context is available
+            result = db.session.execute(text("SELECT 1"))
+            version_info = result.fetchone()
+            print(f"Database connection successful: {version_info[0]}")
+    except SQLAlchemyError as e:
+        print(f"Error occurred during startup DB connection test: {str(e)}")
+
+# Test the connection automatically when the app starts
+test_db_connection_on_startup()
+
+# Route to test the database connection
+@app.route('/test-db-connection')
+def test_db_connection():
+    try:
+        # Execute a simple query to test the connection
+        result = db.session.execute(text("SELECT 1"))
+        version_info = result.fetchone()
+        return f"Database connection successful: {version_info[0]}"
+    except SQLAlchemyError as e:
+        return f"Error occurred: {str(e)}", 500
+
+# OpenAI and ElevenLabs initialization
+client = openai.OpenAI(api_key=api_key)
 model = ChatOpenAI(model="gpt-4", api_key=api_key)
 elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
-election_state = ElectionState()
 
-# LangChain prompt template for generating restaurant candidates based on user input
+# LangChain prompt template for generating restaurant candidates
 restaurant_prompt_template = PromptTemplate(
     input_variables=["number_of_restaurants", "city", "state"],
     template=(
         "Generate {number_of_restaurants} interesting restaurant options in {city}, {state}."
-        " List each restaurant name on a new line.\n\n"
-        "Example output:\n"
-        "- The Blue Moon Restaurant\n"
-        "- The Red Sun Restaurant\n"
-        "- The Green Earth Restaurant\n"
-        "- The Yellow Star Restaurant\n"
-        "- The Purple Planet Restaurant\n"
-        "- The Orange Moon Restaurant"
+        " List each restaurant name on a new line."
     )
 )
 
-# Generate a sentence using GPT-4 based on user input
-def generate_gpt4_text_introduction():
-    introductions = []
-    for index, candidate in enumerate(election_state.candidates, start=1):
-        gpt_text = model.invoke(f"""In a quirky and enthusiastic tone, welcome {candidate} to a show in a few words. 
-                                Begin the introduction with their position in the list;
-                                Example:
-                                Introducing first, the animated and lively Tony Hawk!
-                                Introducing second, the wonderful and endearing Mariah Carey!
-                                Introduce them as follows:
-                                Introducing {ordinal(index)}, the incredible and talented {candidate}!
-                                """)
-        gpt_text = gpt_text.content
-        print(f"Generated GPT-4 Response (content only): {gpt_text}")
-        introductions.append(gpt_text)
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Check if the username is unique
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username already taken. Please choose another one.', 'error')
+            return redirect(url_for('register'))
+
+        # Create and save the new user
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Registration successful! Please log in.', 'success')
+        return redirect(url_for('login'))
     
+    return render_template('register.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Find the user by username
+        user = User.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Logged in successfully.', 'success')
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password.', 'error')
+            return redirect(url_for('login'))
+
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'success')
+    return redirect(url_for('index'))
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'  # Redirect to login page if not authenticated
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
+
+
+# Helper function for generating GPT-4 introductions
+def generate_gpt4_text_introduction(election):
+    introductions = []
+    for index, candidate in enumerate(election.candidates, start=1):
+        gpt_text = model.invoke(f"""In a quirky and enthusiastic tone, welcome {candidate.name} to a show in a few words. 
+                                    Example:
+                                    Introducing first, the animated and lively Tony Hawk!
+                                    Introducing second, the wonderful and endearing Mariah Carey!
+                                    Introduce them as follows:
+                                    Introducing {ordinal(index)}, the animated and lively Tony Hawk!""")
+        introductions.append(gpt_text.content)
     return introductions
 
 def ordinal(n):
@@ -101,264 +188,143 @@ def ordinal(n):
     else:
         raise ValueError(f"Expected integer, got {type(n)}")
 
-# Route for text-to-speech conversion and streaming audio
+# Generate audio for candidate introductions using ElevenLabs API
 @app.route('/generate-candidates-audio', methods=['POST'])
 def generate_audio():
-    introductions_for_tts = []
-    full_intro_string = ""
-    # Generate text using GPT-4
-    introductions_for_tts = generate_gpt4_text_introduction()
-    
-    for introduction in introductions_for_tts:
-        full_intro_string += introduction + " "
+    election_id = request.json.get('election_id')
+    election = Election.query.get(election_id)
 
-    if not full_intro_string or not isinstance(full_intro_string, str):
-        return jsonify({"error": "Text generation failed"}), 500
+    if not election or election.status != 'ongoing':
+        return jsonify({"error": "No active election."}), 400
 
-    # Log the cleaned/generated text before sending to TTS
-    print(f"Sending to TTS: {full_intro_string}")
+    try:
+        introductions_for_tts = generate_gpt4_text_introduction(election)
+        full_intro_string = " ".join(introductions_for_tts)
 
-    # Call the ElevenLabs text_to_speech API to convert GPT-4 text to speech
-    response = elevenclient.text_to_speech.convert(
-        voice_id ="MF3mGyEYCl7XYWbV9V6O",
-        #voice_id="flHkNRp1BlvT73UL6gyz", 
-        #voice_id="pNInz6obpgDQGcFmaJgB",  # Adam pre-made voice
-        optimize_streaming_latency="0",
-        output_format="mp3_22050_32",
-        text=full_intro_string,  # Pass only the content
-        model_id="eleven_turbo_v2",
-        voice_settings=VoiceSettings(
-            stability=0.0,
-            similarity_boost=1.0,
-            style=0.0,
-            use_speaker_boost=True,
-        ),
-    )
+        if not full_intro_string:
+            return jsonify({"error": "Text generation failed."}), 500
 
-    # Create an in-memory bytes buffer to hold the audio data
-    audio_data = BytesIO()
+        response = elevenclient.text_to_speech.convert(
+            voice_id="MF3mGyEYCl7XYWbV9V6O",
+            output_format="mp3_22050_32",
+            text=full_intro_string,
+            model_id="eleven_turbo_v2",
+            voice_settings=VoiceSettings(stability=0.0, similarity_boost=1.0, style=0.0, use_speaker_boost=True),
+        )
 
-    # Write the audio stream to the in-memory buffer
-    for chunk in response:
-        if chunk:
-            audio_data.write(chunk)
+        audio_data = BytesIO()
+        for chunk in response:
+            if chunk:
+                audio_data.write(chunk)
 
-    # Seek to the beginning of the buffer
-    audio_data.seek(0)
+        audio_data.seek(0)
+        return send_file(audio_data, mimetype="audio/mpeg", as_attachment=False, download_name="output.mp3")
 
-    # Return the audio file as a response with the correct MIME type
-    return send_file(audio_data, mimetype="audio/mpeg", as_attachment=False, download_name="output.mp3")
+    except Exception as e:
+        return jsonify({"error": f"Audio generation failed: {str(e)}"}), 500
 
-def format_restaurant_prompt(number_of_restaurants, city, state):
-    """
-    Format the prompt for generating restaurant candidates based on user inputs.
-    :param number_of_restaurants: The number of restaurant options to generate.
-    :param city: The city where the restaurants are located.
-    :param state: The state where the restaurants are located.
-    :return: A formatted prompt string.
-    """
-    return restaurant_prompt_template.format(
-        number_of_restaurants=number_of_restaurants,
-        city=city,
-        state=state
-    )
-
+# Generate restaurant candidates using GPT-4
 def get_restaurant_candidates(number_of_restaurants, city, state):
-    """
-    Generate restaurant candidates using GPT-4 based on user inputs (number of restaurants, city, state).
-    :param number_of_restaurants: The number of restaurant options to generate.
-    :param city: The city where the restaurants are located.
-    :param state: The state where the restaurants are located.
-    :return: A list of restaurant names generated by GPT-4.
-    """
-    prompt = format_restaurant_prompt(number_of_restaurants, city, state)
+    prompt = restaurant_prompt_template.format(number_of_restaurants=number_of_restaurants, city=city, state=state)
     response = model.invoke(prompt)
-    content = response.content
-    return content.strip().split("\n")[:number_of_restaurants]
+    return response.content.strip().split("\n")[:number_of_restaurants]
 
-def start_election(max_votes):
-    """
-    Start a new election by initializing vote counts and setting the election status to 'ongoing'.
-    :param max_votes: The maximum number of votes allowed for this election.
-    """
-    election_state.votes = {candidate: 0 for candidate in election_state.candidates}  
-    election_state.election_status = 'ongoing'
-    election_state.MAX_VOTES = max_votes
+# Start a new election
+def start_election(candidates, max_votes, election_type, election_name):
+    election = Election(election_name=election_name, election_type=election_type, max_votes=max_votes)
+    db.session.add(election)
+    db.session.commit()
 
-def start_general_election(candidates, max_votes):
-    """
-    A helper function to start an election for any type of candidate (restaurants or custom).
-    :param candidates: A list of candidate names for the election.
-    :param max_votes: Maximum number of votes allowed.
-    """
-    election_state.candidates = [candidate for candidate in candidates if candidate.strip()]
+    for candidate_name in candidates:
+        candidate = Candidate(name=candidate_name.strip(), election_id=election.id)
+        db.session.add(candidate)
+    db.session.commit()
 
-    if len(election_state.candidates) == 0:
-        raise ValueError("No valid candidates provided.")
+    return election.id
 
-    start_election(max_votes)
-
-def process_vote(candidate):
-    """
-    Process the vote for the given candidate, ensuring it's valid and updating the vote count.
-    :param candidate: The candidate for whom the vote is being cast.
-    :return: A tuple (message, message_type) to display a flash message.
-    """
-    total_votes = sum(election_state.votes.values())
-    if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
-        if candidate in election_state.votes:
-            election_state.votes[candidate] += 1
-            return "Thank you! Your vote has been successfully submitted.", "success"
-        else:
-            return "Invalid candidate selected.", "danger"
-    elif total_votes >= election_state.MAX_VOTES:
-        election_state.election_status = 'ended'
-        return "All votes have been cast. The election is now closed.", "info"
-    return None, None
-
-def get_remaining_votes():
-    """
-    Calculate the number of remaining votes.
-    :return: The number of remaining votes or None if no votes are allowed.
-    """
-    if election_state.MAX_VOTES:
-        return election_state.MAX_VOTES - sum(election_state.votes.values())
-    return None
-
-@app.route("/", methods=["GET", "POST"])
-def index():
-    """
-    Main route that handles vote submission and displays the voting interface.
-    """
+# Route for displaying the restaurant election setup page
+@app.route("/setup_restaurant_election", methods=["GET", "POST"])
+def setup_restaurant_election():
     if request.method == "POST":
-        candidate = request.form.get("candidate")
-        success, message = submit_vote(candidate)
-        flash(message, "success" if success else "danger")
-        return redirect(url_for("index"))
-
-    remaining_votes = get_remaining_votes()
-    return render_template("index.html", candidates=election_state.candidates, election_status=election_state.election_status, remaining_votes=remaining_votes, restaurant_election_started=election_state.restaurant_election_started)
-
-def submit_vote(candidate):
-    """
-    Process the vote for the given candidate and return the result.
-    :param candidate: The candidate name for whom the vote is being cast.
-    :return: A tuple with a success flag and a message (is_success, message).
-    """
-    total_votes = sum(election_state.votes.values())
-    if total_votes < election_state.MAX_VOTES and election_state.election_status == 'ongoing':
-        if candidate in election_state.votes:
-            election_state.votes[candidate] += 1
-            return True, f"Thank you! Your vote for {candidate} has been submitted."
-        else:
-            return False, "Invalid candidate selected."
-    else:
-        election_state.election_status = 'ended'
-        return False, "All votes have been cast. The election is now closed."
-    
-@app.route("/voice_vote", methods=["POST"])
-def voice_vote():
-    """
-    Handles voice-based voting by matching the recognized candidate from the transcript with the candidates.
-    """
-    data = request.get_json()
-    transcript = data.get("transcript")
-    
-    if not transcript:
-        return jsonify({"message": "No transcript provided."}), 400
-
-    # Lowercase the transcript for case-insensitive matching
-    transcript = transcript.lower()
-    
-    # Find the best match for the spoken transcript
-    candidate_match = difflib.get_close_matches(transcript, [c.lower() for c in election_state.candidates], n=1, cutoff=0.7)
-    
-    if candidate_match:
-        candidate = next((c for c in election_state.candidates if c.lower() == candidate_match[0]), candidate_match[0])
-        success, message = submit_vote(candidate)
-        return jsonify({"message": message}), 200 if success else 400
-    else:
-        return jsonify({"message": "Candidate not recognized. Please try again."}), 400
-    
-@app.route("/create_election", methods=["GET"])
-def choose_category():
-    """
-    Route for choosing the election category (restaurant or custom candidates).
-    """
-    category = request.args.get('category', 'restaurant')  # Default to 'restaurant'
-    return render_template("create_election.html", category=category)
-
-@app.route("/start_restaurant_election", methods=["POST"])
-def start_restaurant_election():
-    """
-    Starts an election using GPT-4-generated restaurant candidates.
-    - Retrieves user inputs for the number of restaurants, city, and state.
-    - Starts the election with the generated candidates.
-    """
-    if 'generate_restaurants' in request.form:
         city = request.form.get('city')
         state = request.form.get('state')
         number_of_restaurants = int(request.form.get('number_of_restaurants'))
         max_votes = int(request.form.get('max_votes'))
+        election_name = request.form.get('election_name')
 
         candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-        start_general_election(candidates, max_votes)
+        election_id = start_election(candidates, max_votes, election_type="restaurant", election_name=election_name)
+        flash(f"Restaurant election '{election_name}' started with ID {election_id}.", "info")
 
-        election_state.restaurant_election_started = True
-        flash("Restaurants have been generated. The election has started.", "info")
-    return redirect(url_for("index"))
+        return redirect(url_for("index"))
+    else:
+        return render_template("restaurant_election.html")
 
-@app.route("/start_custom_election", methods=["POST"])
-def start_custom_election():
-    """
-    Starts a custom election with user-provided candidates.
-    """
-    number_of_candidates = int(request.form.get('number_of_custom_candidates'))
-    max_votes = int(request.form.get('max_votes_custom'))
+# Route for displaying the custom election setup page
+@app.route("/setup_custom_election", methods=["GET", "POST"])
+def setup_custom_election():
+    if request.method == "POST":
+        max_votes = int(request.form.get('max_votes_custom'))
+        election_name = request.form.get('election_name')
+        candidate_names = request.form.getlist('candidate_names[]')
 
-    candidates = [request.form.get(f"candidate_{i + 1}") for i in range(number_of_candidates)]
+        # Remove empty candidate names
+        candidates = [name for name in candidate_names if name.strip() != ""]
 
-    try:
-        start_general_election(candidates, max_votes)
-        flash("Custom candidates have been added. The election has started.", "info")
-    except ValueError:
-        flash("Please provide valid names for all candidates.", "danger")
-        return redirect(url_for('choose_category'))
+        if not candidates:
+            flash("Please enter at least one candidate.", "error")
+            return redirect(url_for("setup_custom_election"))
 
-    return redirect(url_for("index"))
+        election_id = start_election(candidates, max_votes, election_type="custom", election_name=election_name)
+        flash(f"Custom election '{election_name}' started with ID {election_id}.", "info")
 
-@app.route("/results")
-def results():
-    """
-    Displays the election results, showing the percentage of votes for each candidate.
-    """
-    total_votes = sum(election_state.votes.values())
-    results_percentage = {
-        candidate: (count / total_votes) * 100 if total_votes > 0 else 0 
-        for candidate, count in election_state.votes.items()
-    }
+        return redirect(url_for("index"))
+    else:
+        return render_template("custom_election.html")
 
-    return render_template("results.html", results=results_percentage)
+# Route to display the voting page for an election
+@app.route("/vote/<int:election_id>", methods=["GET", "POST"])
+@login_required  # Ensure the user is logged in
+def vote(election_id):
+    election = Election.query.get(election_id)
+    
+    if not election or election.status != 'ongoing':
+        flash("Election not found or has ended.", "error")
+        return redirect(url_for("index"))
 
-def create_error_response(message, status_code=400):
-    """
-    Helper function to create a standardized error response.
-    :param message: The error message to send to the client.
-    :param status_code: The HTTP status code to return (default is 400).
-    :return: A Flask `jsonify` object with the error message and status code.
-    """
-    return jsonify({'error': message}), status_code
+    # Check if the user has already voted
+    existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
+    if existing_vote:
+        flash('You have already voted in this election.', 'error')
+        return redirect(url_for('results', election_id=election_id))
 
+    if request.method == "POST":
+        candidate_id = request.form.get('candidate')
+        if candidate_id:
+            # Record the vote
+            vote = Vote(candidate_id=candidate_id, election_id=election_id)
+            db.session.add(vote)
+
+            # Record the user vote to prevent multiple voting
+            user_vote = UserVote(user_id=current_user.id, election_id=election_id)
+            db.session.add(user_vote)
+            db.session.commit()
+
+            flash("Your vote has been recorded.", "success")
+            return redirect(url_for('index'))
+        else:
+            flash("Please select a candidate.", "error")
+    
+    return render_template("vote.html", election=election)
+
+
+# Process voice voting (Whisper API)
 @app.route("/process_audio", methods=["POST"])
 def process_audio():
     try:
-        print("Processing audio request...")
-
         audio_file = request.files.get('audio')
-
         if not audio_file:
-            print("No audio file found in the request.")
-            return create_error_response('No audio file provided', 400)
+            return jsonify({"error": "No audio file provided."}), 400
 
         audio_data = BytesIO(audio_file.read())
         audio_data.name = "voice_vote.wav"
@@ -368,26 +334,69 @@ def process_audio():
             file=audio_data
         )
 
-        print("Transcription response:", transcription)
-
         if hasattr(transcription, 'text'):
-            print("Transcription result:", transcription.text)
             return jsonify({'transcript': transcription.text}), 200
         else:
-            print("No text field in transcription response.")
-            return create_error_response('No transcription text found.', 500)
+            return jsonify({"error": "No transcription text found."}), 500
 
-    except openai.APIConnectionError as e:
-        print("API connection error:", e)
-        return create_error_response('API connection error. Please try again later.', 500)
+    except Exception as e:
+        return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
 
-    except openai.RateLimitError as e:
-        print("Rate limit exceeded:", e)
-        return create_error_response('Rate limit exceeded. Please try again later.', 429)
+# Submit voice vote
+@app.route("/voice_vote", methods=["POST"])
+@login_required  # Ensure the user is logged in
+def voice_vote():
+    data = request.get_json()
+    transcript = data.get("transcript").lower()
+    election_id = data.get("election_id")
+    election = Election.query.get(election_id)
 
-    except openai.BadRequestError as e:
-        print(f"Bad request: {e}")
-        return create_error_response('Bad request.', 400)
+    if not election or election.status != 'ongoing':
+        return jsonify({"message": "No active election."}), 400
+
+    # Check if the user has already voted
+    existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
+    if existing_vote:
+        return jsonify({"message": "You have already voted in this election."}), 400
+
+    # Find the matching candidate
+    candidate_match = difflib.get_close_matches(transcript, [c.name.lower() for c in election.candidates], n=1, cutoff=0.7)
+    if candidate_match:
+        candidate = Candidate.query.filter_by(name=candidate_match[0], election_id=election_id).first()
+
+        # Record the vote
+        vote = Vote(candidate_id=candidate.id, election_id=election_id)
+        db.session.add(vote)
+
+        # Record the user vote to prevent multiple voting
+        user_vote = UserVote(user_id=current_user.id, election_id=election_id)
+        db.session.add(user_vote)
+        db.session.commit()
+
+        return jsonify({"message": f"Thank you! Your vote for {candidate.name} has been submitted."}), 200
+    else:
+        return jsonify({"message": "Candidate not recognized."}), 400
+
+# Display election results
+@app.route("/results/<int:election_id>")
+def results(election_id):
+    election = Election.query.get(election_id)
+    if not election:
+        return jsonify({"error": "Election not found."}), 404
+
+    total_votes = len(election.votes)
+    results_percentage = {
+        candidate.name: (len(candidate.votes) / total_votes) * 100 if total_votes > 0 else 0
+        for candidate in election.candidates
+    }
+
+    return render_template("results.html", results=results_percentage, election_name=election.election_name)
+
+# Main route to display voting options
+@app.route("/", methods=["GET", "POST"])
+def index():
+    elections = Election.query.filter_by(status='ongoing').all()
+    return render_template("index.html", elections=elections)
 
 if __name__ == "__main__":
     app.run(debug=True)

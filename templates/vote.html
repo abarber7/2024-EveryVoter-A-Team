@@ -1,19 +1,254 @@
 {% extends "base.html" %}
 
-{% block title %}Vote - EveryVoter{% endblock %}
+{% block title %}
+    Vote in {{ election.election_name }}
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .back-button {
+        position: absolute;
+        top: 10px; /* Move the back button up */
+        left: 20px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 10px 15px;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .back-button:hover {
+        background-color: #c0392b;
+    }
+
+    .vote-container {
+        margin-top: 60px;
+        text-align: center;
+    }
+
+    /* Candidate Styling */
+    .candidate-option {
+        margin: 15px;
+        padding: 20px;
+        font-size: 24px;
+        background-color: #f9f9f9;
+        border: 2px solid #2980b9;
+        border-radius: 10px;
+        transition: background-color 0.3s ease;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        cursor: pointer;
+        color: black;
+        position: relative;
+    }
+
+    .candidate-option:hover {
+        background-color: #d6eaf8;
+    }
+
+    /* Hide the radio input */
+    .candidate-option input {
+        display: none;
+    }
+
+    /* Style the label and make it take the entire space */
+    .candidate-option label {
+        width: 100%;
+        display: block;
+        color: black;
+        cursor: pointer;
+    }
+
+    /* Add a checkmark when a candidate is selected */
+    .candidate-option input:checked + label::after {
+        content: '✓'; /* Unicode for checkmark */
+        font-size: 30px;
+        color: green;
+        position: absolute;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+    }
+
+    .submit-button, .tts-button, .voice-button, .progress-button {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        width: 250px;
+        display: inline-block;
+    }
+
+    .submit-button {
+        background-color: #27ae60;
+    }
+
+    .submit-button:hover {
+        background-color: #2ecc71;
+    }
+
+    .tts-button {
+        background-color: #3498db;
+    }
+
+    .tts-button:hover {
+        background-color: #2980b9;
+    }
+
+    .voice-button {
+        background-color: #8e44ad;
+        display: block; /* Align directly underneath */
+        margin: 20px auto 0; /* Center it */
+    }
+
+    .voice-button:hover {
+        background-color: #71368a;
+    }
+
+    .progress-button {
+        background-color: #e67e22;
+        float: right;
+    }
+
+    .progress-button:hover {
+        background-color: #d35400;
+    }
+
+    #audio-introduction {
+        display: none;
+        margin-top: 20px;
+        margin-left: auto;
+        margin-right: auto;
+        text-align: center;
+    }
+
+    #audio-container {
+        text-align: center;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-    <h1>Cast Your Vote</h1>
-    <form action="{{ url_for('vote') }}" method="POST">
-        {% for candidate in candidates %}
-            <div class="form-check">
-                <input class="form-check-input" type="radio" name="candidate" id="candidate{{ loop.index }}" value="{{ candidate }}" required>
-                <label class="form-check-label" for="candidate{{ loop.index }}">
-                    {{ candidate }}
-                </label>
+<a href="{{ url_for('index') }}" class="back-button">Back</a>
+
+<div class="vote-container">
+    <h1>Vote in {{ election.election_name }}</h1>
+
+    <form action="{{ url_for('vote', election_id=election.id) }}" method="POST">
+        {% for candidate in election.candidates %}
+            <div class="candidate-option">
+                <input type="radio" id="candidate_{{ candidate.id }}" name="candidate" value="{{ candidate.id }}">
+                <label for="candidate_{{ candidate.id }}">{{ candidate.name }}</label>
             </div>
         {% endfor %}
-        <button type="submit" class="btn btn-primary mt-3">Submit Vote</button>
+        <button type="submit" class="submit-button">Submit Vote</button>
     </form>
-    <p><a href="{{ url_for('index') }}" class="btn btn-secondary mt-3">Back to Home</a></p>
+
+    <!-- Button to introduce candidates -->
+    <div id="audio-container">
+        <button class="tts-button" id="introduce-candidates-btn" data-election-id="{{ election.id }}">Introduce Candidates</button>
+        <audio id="audio-introduction" controls></audio>
+    </div>
+
+    <!-- Voice Voting Button -->
+    <button class="voice-button" id="vote-by-voice-btn" data-election-id="{{ election.id }}">Vote by Voice</button>
+
+    <!-- Button to view election progress -->
+    <a href="{{ url_for('results', election_id=election.id) }}" class="progress-button">View Election Progress</a>
+</div>
+
+<script>
+// TTS for candidate introductions
+document.getElementById('introduce-candidates-btn').addEventListener('click', function() {
+    const electionId = this.getAttribute('data-election-id');
+    
+    // Fetch request to generate the audio
+    fetch('/generate-candidates-audio', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ election_id: electionId }),
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Audio generation failed.');
+        }
+        return response.blob();
+    })
+    .then(blob => {
+        const audioElement = document.getElementById('audio-introduction');
+        const audioURL = URL.createObjectURL(blob);
+        audioElement.src = audioURL;
+        audioElement.style.display = 'block';
+        audioElement.play();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Audio introduction failed. Please try again.");
+    });
+});
+
+// Voice voting functionality
+document.getElementById('vote-by-voice-btn').addEventListener('click', function() {
+    const electionId = this.getAttribute('data-election-id');
+    const voiceButton = this; // Reference to the button
+
+    // Change button text to "Listening..."
+    voiceButton.innerHTML = "Listening...";
+
+    if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+        alert('Your browser does not support voice recognition.');
+        return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+
+    recognition.onstart = function() {
+        console.log('Voice recognition started. Speak the name of the candidate.');
+    };
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript.toLowerCase();
+        console.log('You voted for: ', transcript);
+
+        // Send the transcript to the server for matching and voting
+        fetch('/voice_vote', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                election_id: electionId,
+                transcript: transcript
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            // Reset button text back to "Vote by Voice" after voting
+            voiceButton.innerHTML = "Vote by Voice";
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Voice voting failed. Please try again.');
+            // Reset button text back to "Vote by Voice" in case of error
+            voiceButton.innerHTML = "Vote by Voice";
+        });
+    };
+
+    recognition.onerror = function(event) {
+        console.error('Recognition error:', event.error);
+        alert('Error during voice recognition. Please try again.');
+        // Reset button text back to "Vote by Voice" in case of error
+        voiceButton.innerHTML = "Vote by Voice";
+    };
+
+    recognition.start();
+});
+</script>
 {% endblock %}

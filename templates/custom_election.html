@@ -1,0 +1,117 @@
+<!-- custom_election.html -->
+
+{% extends "base.html" %}
+
+{% block title %}
+    Set Up Custom Election
+{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 10px 15px;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .back-button:hover {
+        background-color: #c0392b;
+    }
+
+    form {
+        margin-top: 60px;
+        text-align: center;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 40px;
+    }
+
+    input[type="text"], input[type="number"] {
+        width: 300px;
+        padding: 10px;
+        margin: 5px;
+    }
+
+    input[type="submit"] {
+        padding: 10px 20px;
+        font-size: 18px;
+        background-color: #27ae60;
+        color: white;
+        border: none;
+        border-radius: 5px;
+    }
+
+    input[type="submit"]:hover {
+        background-color: #2ecc71;
+    }
+
+    #candidate-container input {
+        display: block;
+        margin: 5px auto;
+        width: 300px;
+    }
+
+    .candidate-buttons {
+        margin: 10px;
+    }
+
+    .candidate-buttons button {
+        padding: 5px 10px;
+        margin: 5px;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('index') }}" class="back-button">Back</a>
+
+<h1>Set Up a Custom Election</h1>
+
+<form action="{{ url_for('setup_custom_election') }}" method="POST">
+    <label for="election_name">Election Name:</label><br>
+    <input type="text" id="election_name" name="election_name" required><br><br>
+
+    <label for="max_votes_custom">Maximum Votes:</label><br>
+    <input type="number" id="max_votes_custom" name="max_votes_custom" min="1" required><br><br>
+
+    <label>Candidate Names:</label><br>
+    <div id="candidate-container">
+        <input type="text" name="candidate_names[]" required><br>
+    </div>
+    <div class="candidate-buttons">
+        <button type="button" onclick="addCandidate()">Add Candidate</button>
+        <button type="button" onclick="removeCandidate()">Remove Candidate</button>
+    </div>
+
+    <input type="submit" value="Start Election">
+</form>
+
+<script>
+function addCandidate() {
+    var container = document.getElementById('candidate-container');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.name = 'candidate_names[]';
+    input.required = true;
+    container.appendChild(input);
+    container.appendChild(document.createElement('br'));
+}
+
+function removeCandidate() {
+    var container = document.getElementById('candidate-container');
+    var inputs = container.getElementsByTagName('input');
+    if (inputs.length > 1) {
+        container.removeChild(inputs[inputs.length - 1]);
+        container.removeChild(container.lastChild); // Remove the <br> element
+    }
+}
+</script>
+{% endblock %}

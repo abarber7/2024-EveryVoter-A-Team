@@ -1,35 +1,109 @@
+<!-- results.html -->
+
 {% extends "base.html" %}
 
-{% block title %}Election Results{% endblock %}
-
-{% block content %}
-    <h1 class="text-center my-4">Election Results</h1>
-
-    <div class="mt-4" id="results-container">
-        {% for candidate, percentage in results.items() %}
-            <h4>{{ candidate }}</h4>
-            <div class="progress mb-3">
-                <div class="progress-bar" role="progressbar" data-percentage="{{ percentage }}" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ percentage }}%
-                </div>
-            </div>
-        {% endfor %}
-    </div>
-
-    <!-- Back to Voting Button -->
-    <div class="text-center mt-5">
-        <a href="{{ url_for('index') }}" class="btn btn-primary">Back to Voting</a>
-    </div>
+{% block title %}
+    Election Results - {{ election_name }}
 {% endblock %}
 
-{% block extra_scripts %}
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const progressBars = document.querySelectorAll('.progress-bar');
-            progressBars.forEach(function (bar) {
-                const percentage = bar.getAttribute('data-percentage');
-                bar.style.width = percentage + '%';
-            });
-        });
-    </script>
+{% block extra_styles %}
+<style>
+    .back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        background-color: #e74c3c;
+        color: white;
+        padding: 10px 15px;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+    .back-button:hover {
+        background-color: #c0392b;
+    }
+
+    h1 {
+        margin-top: 60px;
+        text-align: center;
+    }
+
+    table {
+        margin: 0 auto;
+        margin-top: 20px;
+        border-collapse: collapse;
+        width: 50%;
+    }
+
+    th, td {
+        padding: 10px;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
+
+    /* Additional styles for the chart */
+    .chart-container {
+        width: 60%;
+        margin: 40px auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('index') }}" class="back-button">Back</a>
+
+<h1>Election Results - {{ election_name }}</h1>
+
+<table>
+    <tr>
+        <th>Candidate</th>
+        <th>Percentage of Votes</th>
+    </tr>
+    {% for candidate, percentage in results.items() %}
+    <tr>
+        <td>{{ candidate }}</td>
+        <td>{{ percentage | round(2) }}%</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="chart-container">
+    <canvas id="resultsChart"></canvas>
+</div>
+
+<!-- Include Chart.js library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Prepare data for the chart using a safe stringified JSON
+    var data = JSON.parse('{{ results | tojson | safe }}');
+    var candidates = Object.keys(data);
+    var percentages = Object.values(data);
+
+    var ctx = document.getElementById('resultsChart').getContext('2d');
+    var resultsChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: candidates,
+            datasets: [{
+                label: 'Percentage of Votes',
+                data: percentages,
+                backgroundColor: 'rgba(52, 152, 219, 0.6)',
+                borderColor: 'rgba(41, 128, 185, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: {
+                        stepSize: 10
+                    }
+                }
+            }
+        }
+    });
+</script>
 {% endblock %}

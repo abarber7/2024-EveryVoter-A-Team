@@ -1,99 +1,93 @@
+<!-- index.html -->
+
 {% extends "base.html" %}
 
-{% block title %}Cast Your Vote{% endblock %}
+{% block title %}
+    Welcome to EveryVoter
+{% endblock %}
 
-{% block pre_content %}
-    <!-- Placeholder for page specific content -->
+{% block extra_styles %}
+<style>
+    .election-options {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        height: 100vh;
+        padding-top: 50px;
+    }
+
+    h1 {
+        margin-bottom: 40px;
+        font-size: 2.5em;
+        text-align: center;
+    }
+
+    .election-button {
+        margin: 20px;
+        padding: 15px 30px;
+        font-size: 18px;
+        color: white;
+        background-color: #2980b9;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        width: 250px;
+        text-align: center;
+        text-decoration: none;
+    }
+
+    .election-button:hover {
+        background-color: #3498db;
+    }
+
+    .election-link {
+        margin: 5px;
+        font-size: 18px;
+    }
+
+    .election-link a {
+        text-decoration: none;
+        color: #2980b9;
+    }
+
+    .election-link a:hover {
+        text-decoration: underline;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-    <h1 class="text-center my-4 text-light">Cast Your Vote</h1>
+<div class="election-options">
+    <h1>Choose Your Election</h1>
 
-    <!-- Include debug status -->
-    {% include 'partials/debug_status.html' %}
-    
-    {% if candidates and election_status == 'ongoing' %}
-        <form method="POST" action="/">
-            <!-- Include remaining votes -->
-            {% include 'partials/remaining_votes.html' %}
-
-            <div class="row justify-content-center">
-                {% for candidate in candidates %}
-                    <div class="col-md-4 mb-2">
-                        <button type="submit" name="candidate" value="{{ candidate }}" class="btn btn-primary btn-block">{{ candidate }}</button>
-                    </div>
-                {% endfor %}
-            </div>
-        </form>
-
-        <!-- Introduce Candidates Button -->
-        <div class="text-center my-4">
-            <button id="introduceButton" class="btn btn-info">Introduce Candidates</button>
-            <!-- Hidden paragraph to show "Grabbing the mic..." -->
-            <p id="statusText" style="display: none;">Grabbing the mic...</p>
-        </div>
-
-        <!-- Audio Player for TTS -->
-        <div class="text-center my-4">
-            <audio id="audioPlayer" controls></audio>
-        </div>
-
-        <!-- Include voice voting section -->
-        {% include 'partials/voice_voting.html' %}
+    {% if user.is_authenticated %}
+        <p>Welcome, {{ user.username }}!</p>
+        <a href="{{ url_for('logout') }}">Log Out</a>
     {% else %}
-        <p class="text-center text-warning">No candidates available or election has not started yet.</p>
+        <p>Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">sign up</a> to vote in an election.</p>
     {% endif %}
 
-    <!-- If election has not started or has ended -->
-    {% if election_status == 'not_started' or election_status == 'ended' %}
-        <a href="{{ url_for('choose_category', category='restaurant') }}" class="btn btn-success btn-block mb-2">Vote on Restaurants</a>
-        <a href="{{ url_for('choose_category', category='custom') }}" class="btn btn-warning btn-block mb-2">Choose Your Candidates</a>
+    <!-- Links for Ongoing Elections -->
+    {% if elections %}
+        <h2>Ongoing Elections</h2>
+        {% for election in elections %}
+            <div class="election-link">
+                <a href="{{ url_for('vote', election_id=election.id) }}">{{ election.election_name }}</a>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No ongoing elections at the moment.</p>
     {% endif %}
 
-    <a href="{{ url_for('results') }}" class="btn btn-info btn-block">View Current Results</a>
-{% endblock %}
+    <!-- Buttons for creating new elections -->
+    <a href="{{ url_for('setup_restaurant_election') }}" class="election-button">
+        Restaurant Election
+    </a>
 
-{% block extra_scripts %}
-    <!-- Pass candidates data to JavaScript via hidden script -->
-    <script id="candidates-data" type="application/json">{{ candidates|tojson }}</script>
-
-    <script>
-        // Handle "Introduce Candidates" button click
-        document.getElementById('introduceButton').addEventListener('click', function() {
-            var introduceButton = document.getElementById('introduceButton');
-            var statusText = document.getElementById('statusText');
-
-            // Change button text to "Listening..." and display "Grabbing the mic..."
-            introduceButton.innerHTML = "Queued audio";
-            statusText.style.display = "block";
-
-            // Make a POST request to fetch the TTS audio for candidate introductions
-            fetch('/generate-candidates-audio', {
-                method: 'POST'
-            })
-            .then(response => response.blob())  // Get the audio response as a blob
-            .then(blob => {
-                // Set the audio player source to the returned blob
-                var audioURL = URL.createObjectURL(blob);
-                var audioPlayer = document.getElementById('audioPlayer');
-                audioPlayer.src = audioURL;
-                audioPlayer.play();  // Automatically play the audio
-
-                // Reset button text and hide "Grabbing the mic..." message
-                introduceButton.innerHTML = "Introduce Candidates";
-                statusText.style.display = "none";
-            })
-            .catch(error => {
-                console.error('Error:', error);
-
-                // Reset button text and hide "Grabbing the mic..." message if an error occurs
-                introduceButton.innerHTML = "Introduce Candidates";
-                statusText.style.display = "none";
-            });
-        });
-    </script>
-
-    <!-- Other JavaScript files -->
-    <script src="{{ url_for('static', filename='shooting-stars.js') }}"></script>
-    <script src="{{ url_for('static', filename='voice.js') }}"></script>
+    <a href="{{ url_for('setup_custom_election') }}" class="election-button">
+        Custom Election
+    </a>
+</div>
 {% endblock %}

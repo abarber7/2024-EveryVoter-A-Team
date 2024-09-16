@@ -1,55 +1,69 @@
 {% extends "base.html" %}
 
-{% block title %}Choose Category{% endblock %}
+{% block title %}
+    Create Restaurant Election
+{% endblock %}
 
-{% block pre_content %}
-    {% include 'partials/back_button.html' %}
+{% block extra_styles %}
+<style>
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+    }
+
+    .form-container form {
+        width: 100%;
+        max-width: 500px;
+        padding: 20px;
+        background-color: #f7f7f7;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-container form input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .form-container form button {
+        width: 100%;
+        padding: 10px;
+        background-color: #2980b9;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .form-container form button:hover {
+        background-color: #3498db;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
-    <h1 class="text-center my-4">Choose Voting Category</h1>
+<div class="form-container">
+    <h1>Create a New Restaurant Election</h1>
+    <form action="{{ url_for('start_restaurant_election') }}" method="POST">
+        <label for="city">City:</label>
+        <input type="text" id="city" name="city" required>
 
-    {% if category == 'restaurant' %}
-        <!-- Restaurant voting section -->
-        <form method="POST" action="{{ url_for('start_restaurant_election') }}">
-            <div class="form-group">
-                <label for="city">City</label>
-                <input type="text" class="form-control mb-2" id="city" name="city" required>
-            </div>
-            <div class="form-group">
-                <label for="state">State</label>
-                <input type="text" class="form-control mb-2" id="state" name="state" required>
-            </div>
-            <div class="form-group">
-                <label for="number_of_restaurants">Number of Restaurants</label>
-                <input type="number" class="form-control mb-2" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
-            </div>
-            <div class="form-group">
-                <label for="max_votes">Maximum Votes</label>
-                <input type="number" class="form-control mb-2" id="max_votes" name="max_votes" min="1" required>
-            </div>
-            <button type="submit" name="generate_restaurants" value="generate_restaurants" class="btn btn-warning btn-block mb-2">Generate Restaurants</button>
-        </form>
-    {% elif category == 'custom' %}
-        <!-- Custom candidate voting section -->
-        <form method="POST" action="{{ url_for('start_custom_election') }}">
-            <div class="form-group">
-                <label for="number_of_custom_candidates">Number of Candidates</label>
-                <input type="number" class="form-control mb-2" id="number_of_custom_candidates" name="number_of_custom_candidates" min="1" required oninput="generateCandidateFields()">
-            </div>
+        <label for="state">State:</label>
+        <input type="text" id="state" name="state" required>
 
-            <div id="custom_candidates_container"></div>
+        <label for="number_of_restaurants">Number of Restaurants:</label>
+        <input type="number" id="number_of_restaurants" name="number_of_restaurants" min="1" required>
 
-            <div class="form-group">
-                <label for="max_votes_custom">Maximum Votes</label>
-                <input type="number" class="form-control mb-2" id="max_votes_custom" name="max_votes_custom" min="1" required>
-            </div>
+        <label for="max_votes">Max Votes Per User:</label>
+        <input type="number" id="max_votes" name="max_votes" min="1" required>
 
-            <button type="submit" class="btn btn-primary btn-block mb-2">Start Election with Custom Candidates</button>
-        </form>
-    {% endif %}
-{% endblock %}
-
-{% block extra_scripts %}
-    <script src="{{ url_for('static', filename='scripts.js') }}"></script>
+        <button type="submit">Create Restaurant Election</button>
+    </form>
+</div>
 {% endblock %}

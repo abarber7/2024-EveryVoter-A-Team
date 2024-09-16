@@ -1,220 +1,79 @@
-# test_integration.py
-
 import unittest
-from unittest.mock import patch, MagicMock
-from io import BytesIO
-import html  # Import html module to unescape HTML entities
+from application import app, db
+from models.models import Election, Candidate, Vote, User
+from flask_login import login_user
 
-from application import app, election_state
-
-class IntegrationTestCase(unittest.TestCase):
+class ElectionIntegrationTestCase(unittest.TestCase):
 
     def setUp(self):
-        """Set up the test client and reset election state."""
+        """Set up the test client and database."""
         self.app = app.test_client()
         self.app.testing = True
+        self.app_context = app.app_context()
+        self.app_context.push()
 
-        # Reset the election state before each test
-        election_state.candidates = []
-        election_state.votes = {}
-        election_state.election_status = 'not_started'
-        election_state.MAX_VOTES = None
-        election_state.restaurant_election_started = False
+        # Start a nested transaction to roll back after each test
+        db.session.begin_nested()
 
-    @patch('application.get_restaurant_candidates')
-    def test_full_election_workflow(self, mock_get_restaurants):
-        """Simulate the entire election process."""
-        # Mock the GPT-4 response for restaurant candidates
-        mock_get_restaurants.return_value = ["Alice's Diner", "Bob's Burgers"]
+        # Create a user for testing
+        self.user = User(username="testuser")
+        self.user.set_password("password")
+        db.session.add(self.user)
+        db.session.commit()
 
-        with self.app:
-            # Start a restaurant election
-            response = self.app.post('/start_restaurant_election', data={
-                'city': 'Sample City',
-                'state': 'Sample State',
-                'number_of_restaurants': '2',
-                'max_votes': '3',
-                'generate_restaurants': 'Generate Restaurants'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+    def tearDown(self):
+        """Rollback the session instead of dropping the tables."""
+        db.session.rollback()
+        db.session.remove()
+        self.app_context.pop()
 
-            # Decode and unescape response data
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
+    def login(self):
+        """Helper method to log in the test user."""
+        return self.app.post('/login', data={
+            'username': 'testuser',
+            'password': 'password'
+        }, follow_redirects=True)
 
-            self.assertIn("Restaurants have been generated. The election has started.", unescaped_response)
-            self.assertListEqual(election_state.candidates, ["Alice's Diner", "Bob's Burgers"])
-            self.assertEqual(election_state.MAX_VOTES, 3)
+    def test_restaurant_election_workflow(self):
+        """Test the workflow of setting up an election, voting, and viewing results."""
+        
+        # Log in the user
+        self.login()
 
-            # Cast votes via form submission
-            response = self.app.post('/', data={'candidate': "Alice's Diner"}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+        # Step 1: Set up a restaurant election
+        response = self.app.post('/setup_restaurant_election', data={
+            'city': 'New York',
+            'state': 'NY',
+            'number_of_restaurants': '3',
+            'max_votes': '5',
+            'election_name': 'Restaurant Election'
+        }, follow_redirects=True)
 
-            # Decode and unescape response data
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"started", response.data)
 
-            self.assertIn("Thank you! Your vote for Alice's Diner has been submitted.", unescaped_response)
-            self.assertEqual(election_state.votes["Alice's Diner"], 1)
+        # Step 2: Verify the election exists in the database
+        election = Election.query.filter_by(election_name="Restaurant Election").first()
+        self.assertIsNotNone(election)
+        candidates = Candidate.query.filter_by(election_id=election.id).all()
+        self.assertEqual(len(candidates), 3)
 
-            # Simulate a voice vote with a transcript for 'Bob's Burgers'
-            with patch('application.client.audio.transcriptions.create') as mock_transcribe:
-                mock_transcribe.return_value = MagicMock(text="Bob's Burgers")
-                # Simulate sending an audio file
-                data = {
-                    'audio': (BytesIO(b'test audio data'), 'voice_vote.wav')
-                }
-                response = self.app.post('/process_audio', data=data, content_type='multipart/form-data')
-                self.assertEqual(response.status_code, 200)
+        # Step 3: Submit a vote for the first candidate
+        response = self.app.post(f'/vote/{election.id}', data={'candidate': candidates[0].id}, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
 
-                # Decode and unescape response data
-                response_text = response.data.decode('utf-8')
-                unescaped_response = html.unescape(response_text)
+        # Step 4: Verify that the user cannot vote again in the same election
+        response = self.app.post(f'/vote/{election.id}', data={'candidate': candidates[1].id}, follow_redirects=True)
+        self.assertIn(b"You have already voted", response.data)  # Assuming this message is shown
 
-                self.assertIn("Bob's Burgers", unescaped_response)
+        # Step 5: Verify the vote was recorded in the database
+        votes_for_first_candidate = Vote.query.filter_by(candidate_id=candidates[0].id).count()
+        self.assertEqual(votes_for_first_candidate, 1)
 
-            # Process the voice vote
-            response = self.app.post('/voice_vote', json={'transcript': "Bob's Burgers"}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
+        # Step 6: Verify the results page renders correctly
+        response = self.app.get(f'/results/{election.id}')
+        self.assertEqual(response.status_code, 200)
 
-            # Decode and unescape response data
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-
-            self.assertIn("Thank you! Your vote for Bob's Burgers has been submitted.", unescaped_response)
-            self.assertEqual(election_state.votes["Bob's Burgers"], 1)
-
-            # Access the results page
-            response = self.app.get('/results')
-            self.assertEqual(response.status_code, 200)
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('Election Results', unescaped_response)
-            self.assertIn("Alice's Diner", unescaped_response)
-            self.assertIn("Bob's Burgers", unescaped_response)
-
-    @patch('application.get_restaurant_candidates')
-    def test_election_max_votes_reached(self, mock_get_restaurants):
-        """Test behavior when maximum votes are reached."""
-        mock_get_restaurants.return_value = ['Alice', 'Bob']
-
-        with self.app:
-            # Start an election with max_votes = 1
-            response = self.app.post('/start_restaurant_election', data={
-                'city': 'Sample City',
-                'state': 'Sample State',
-                'number_of_restaurants': '2',
-                'max_votes': '1',
-                'generate_restaurants': 'Generate Restaurants'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-
-            # Cast the only allowed vote
-            response = self.app.post('/', data={'candidate': 'Alice'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('Thank you! Your vote for Alice has been submitted.', unescaped_response)
-            self.assertEqual(election_state.votes['Alice'], 1)
-
-            # Attempt to cast another vote
-            response = self.app.post('/', data={'candidate': 'Bob'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('All votes have been cast. The election is now closed.', unescaped_response)
-            self.assertEqual(election_state.votes.get('Bob', 0), 0)
-
-    @patch('application.get_restaurant_candidates')
-    @patch('application.client.audio.transcriptions.create')
-    def test_voice_vote_unrecognized_candidate(self, mock_transcribe, mock_get_restaurants):
-        """Test voice voting with an unrecognized candidate."""
-        mock_get_restaurants.return_value = ['Alice', 'Bob']
-        mock_transcribe.return_value = MagicMock(text='Charlie')
-
-        with self.app:
-            # Start the election
-            response = self.app.post('/start_restaurant_election', data={
-                'city': 'Sample City',
-                'state': 'Sample State',
-                'number_of_restaurants': '2',
-                'max_votes': '5',
-                'generate_restaurants': 'Generate Restaurants'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-
-            # Simulate processing an audio file with unrecognized candidate
-            data = {
-                'audio': (BytesIO(b'test audio data'), 'voice_vote.wav')
-            }
-            response = self.app.post('/process_audio', data=data, content_type='multipart/form-data')
-            self.assertEqual(response.status_code, 200)
-
-            # Decode and unescape response data
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('Charlie', unescaped_response)
-
-            # Process the voice vote
-            response = self.app.post('/voice_vote', json={'transcript': 'Charlie'}, follow_redirects=True)
-            self.assertEqual(response.status_code, 400)
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('Candidate not recognized. Please try again.', unescaped_response)
-
-    @patch('application.get_restaurant_candidates')
-    def test_election_without_votes(self, mock_get_restaurants):
-        """Test results page when no votes have been cast."""
-        mock_get_restaurants.return_value = ['Alice', 'Bob']
-
-        with self.app:
-            # Start the election
-            response = self.app.post('/start_restaurant_election', data={
-                'city': 'Sample City',
-                'state': 'Sample State',
-                'number_of_restaurants': '2',
-                'max_votes': '5',
-                'generate_restaurants': 'Generate Restaurants'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-
-            # Access the results page without casting any votes
-            response = self.app.get('/results')
-            self.assertEqual(response.status_code, 200)
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-            self.assertIn('Election Results', unescaped_response)
-            self.assertIn('Alice', unescaped_response)
-            self.assertIn('Bob', unescaped_response)
-            # Ensure that vote percentages are 0% or handled gracefully
-            self.assertNotIn('NaN%', unescaped_response)
-
-    def test_start_custom_election(self):
-        """Test starting a custom election (POST /start_custom_election)"""
-        with self.app:
-            # Reset election state
-            election_state.candidates = []
-            election_state.votes = {}
-            election_state.election_status = 'not_started'
-            election_state.MAX_VOTES = None
-
-            response = self.app.post('/start_custom_election', data={
-                'number_of_custom_candidates': '3',
-                'max_votes_custom': '10',
-                'candidate_1': 'Candidate A',
-                'candidate_2': 'Candidate B',
-                'candidate_3': 'Candidate C'
-            }, follow_redirects=True)
-            self.assertEqual(response.status_code, 200)
-
-            # Decode and unescape response data
-            response_text = response.data.decode('utf-8')
-            unescaped_response = html.unescape(response_text)
-
-            # Check for the flash message
-            self.assertIn('Custom candidates have been added. The election has started.', unescaped_response)
-            self.assertEqual(election_state.candidates, ['Candidate A', 'Candidate B', 'Candidate C'])
-            self.assertEqual(election_state.MAX_VOTES, 10)
-
-if __name__ == '__main__':
-    unittest.main()
+        # Verify that the response contains the expected vote percentages
+        response_text = response.data.decode('utf-8')
+        self.assertIn("100.0%", response_text)  # 1 vote out of 1 for first candidate
