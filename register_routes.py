@@ -1,12 +1,20 @@
+from flask import current_app
 from flask_login import login_user, login_required, logout_user, current_user
 from models.models import User, Election, Candidate, Vote, UserVote
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file
 from extensions import db
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
+import difflib
+from io import BytesIO
+from elevenlabs import VoiceSettings
+from elevenlabs.client import ElevenLabs
+import logging
+
 
 class RegisterRoutes:
     def register_all_routes(app):
+        logging.debug("Request received at /generate-candidates-audio")
         # Route to test the database connection
         @app.route('/test-db-connection')
         def test_db_connection():
@@ -77,13 +85,15 @@ class RegisterRoutes:
                 return jsonify({"error": "No active election."}), 400
 
             try:
-                introductions_for_tts = generate_gpt4_text_introduction(election)
+                introductions_for_tts = current_app.election_service.generate_gpt4_text_introduction(election)
+                logging.debug(f"Generated Introductions: {introductions_for_tts}")
                 full_intro_string = " ".join(introductions_for_tts)
+                logging.debug(f"Text for TTS: {full_intro_string}")
 
                 if not full_intro_string:
                     return jsonify({"error": "Text generation failed."}), 500
 
-                response = elevenclient.text_to_speech.convert(
+                response = current_app.elevenclient.text_to_speech.convert(
                     voice_id="MF3mGyEYCl7XYWbV9V6O",
                     output_format="mp3_22050_32",
                     text=full_intro_string,
@@ -91,15 +101,24 @@ class RegisterRoutes:
                     voice_settings=VoiceSettings(stability=0.0, similarity_boost=1.0, style=0.0, use_speaker_boost=True),
                 )
 
+                logging.debug(f"ElevenLabs API Response: {response}")
+
                 audio_data = BytesIO()
                 for chunk in response:
                     if chunk:
+                        logging.debug(f"Writing chunk of size: {len(chunk)}")
                         audio_data.write(chunk)
+
+                # Ensure the audio data has been written
+                if audio_data.getbuffer().nbytes == 0:
+                    logging.debug("No audio data was written.")
+                    return jsonify({"error": "Audio data is empty."}), 500
 
                 audio_data.seek(0)
                 return send_file(audio_data, mimetype="audio/mpeg", as_attachment=False, download_name="output.mp3")
 
             except Exception as e:
+                logging.error(f"Audio generation failed: {str(e)}")
                 return jsonify({"error": f"Audio generation failed: {str(e)}"}), 500
 
 
@@ -113,8 +132,8 @@ class RegisterRoutes:
                 max_votes = int(request.form.get('max_votes'))
                 election_name = request.form.get('election_name')
 
-                candidates = get_restaurant_candidates(number_of_restaurants, city, state)
-                election_id = start_election(candidates, max_votes, election_type="restaurant", election_name=election_name)
+                candidates = current_app.election_service.get_restaurant_candidates(number_of_restaurants, city, state)
+                election_id = current_app.election_service.start_election(candidates, max_votes, election_type="restaurant", election_name=election_name)
                 flash(f"Restaurant election '{election_name}' started with ID {election_id}.", "info")
 
                 return redirect(url_for("index"))
@@ -136,7 +155,8 @@ class RegisterRoutes:
                     flash("Please enter at least one candidate.", "error")
                     return redirect(url_for("setup_custom_election"))
 
-                election_id = start_election(candidates, max_votes, election_type="custom", election_name=election_name)
+                election_id = current_app.election_service.start_election(candidates, max_votes, election_type="custom", election_name=election_name)
+
                 flash(f"Custom election '{election_name}' started with ID {election_id}.", "info")
 
                 return redirect(url_for("index"))

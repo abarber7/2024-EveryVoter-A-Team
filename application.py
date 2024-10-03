@@ -35,6 +35,7 @@ import openai
 from io import BytesIO
 import os
 from extensions import db
+from election_service import ElectionService
 
 def create_app(config_name='default'):
     """Application factory function"""
@@ -80,6 +81,12 @@ def create_app(config_name='default'):
     client = openai.OpenAI(api_key=api_key)
     model = ChatOpenAI(model="gpt-4", api_key=api_key)
     elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
+    app.elevenclient = elevenclient
+    
+     # Initialize ElectionService and make it available in app context
+    election_service = ElectionService(model=model, db=db)
+
+    app.election_service = election_service
 
     # Register blueprints/routes here
     with app.app_context():
