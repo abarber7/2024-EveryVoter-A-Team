@@ -21,8 +21,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash, jso
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
-from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
+from elevenlabs import VoiceSettings
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_login import login_user, login_required, logout_user, current_user
@@ -82,7 +82,7 @@ def create_app(config_name='default'):
     model = ChatOpenAI(model="gpt-4", api_key=api_key)
     elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
     app.elevenclient = elevenclient
-    
+
      # Initialize ElectionService and make it available in app context
     election_service = ElectionService(model=model, db=db)
 

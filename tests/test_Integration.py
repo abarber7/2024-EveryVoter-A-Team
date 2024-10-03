@@ -38,7 +38,7 @@ class TestHomepage(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
             
             # Check if the response contains expected content
-            self.assertIn(b'Welcome to the Voting App', response.data)
+            self.assertIn(b'Choose Your Election', response.data)
 
 if __name__ == '__main__':
     unittest.main()
