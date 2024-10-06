@@ -1,6 +1,8 @@
 # application.py
 
 import warnings
+import time
+from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
 # Suppress specific Pydantic UserWarnings
 warnings.filterwarnings(
@@ -59,7 +61,26 @@ def create_app(config_name='default'):
     db.init_app(app)
     migrate = Migrate(app, db)
 
-     # Initialize Flask-Login
+    max_retries = 5
+    retry_delay = 5  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            with app.app_context():
+                # Test the database connection
+                db.engine.connect()
+            print("Database connection successful")
+            break
+        except (SQLAlchemyError, OperationalError) as e:
+            if attempt < max_retries - 1:
+                print(f"Database connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+                retry_delay *= 2  # Exponential backoff
+            else:
+                print(f"Failed to connect to the database after {max_retries} attempts. Error: {str(e)}")
+                raise
+
+    # Initialize Flask-Login
     login_manager = LoginManager()
     login_manager.init_app(app)
     login_manager.login_view = 'login'  # Redirect to login page if not authenticated
@@ -83,17 +104,13 @@ def create_app(config_name='default'):
     elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
     app.elevenclient = elevenclient
 
-     # Initialize ElectionService and make it available in app context
+    # Initialize ElectionService and make it available in app context
     election_service = ElectionService(model=model, db=db)
-
     app.election_service = election_service
 
-    # Register blueprints/routes here
+    # Register routes
     with app.app_context():
         from models.models import Election, Candidate, Vote, User, UserVote
-
-        # Test DB connection
-        #test_db_connection_on_startup()
 
     # Register routes using the RegisterRoutes class
     RegisterRoutes.register_all_routes(app)
@@ -111,48 +128,6 @@ def test_db_connection_on_startup():
     except SQLAlchemyError as e:
         print(f"Error occurred during startup DB connection test: {str(e)}")
 """
-# Helper function for generating GPT-4 introductions
-def generate_gpt4_text_introduction(election):
-    introductions = []
-    for index, candidate in enumerate(election.candidates, start=1):
-        gpt_text = model.invoke(f"""In a quirky and enthusiastic tone, welcome {candidate.name} to a show in a few words. 
-                                    Example:
-                                    Introducing first, the animated and lively Tony Hawk!
-                                    Introducing second, the wonderful and endearing Mariah Carey!
-                                    Introduce them as follows:
-                                    Introducing {ordinal(index)}, the animated and lively Tony Hawk!""")
-        introductions.append(gpt_text.content)
-    return introductions
-
-def ordinal(n):
-    """Helper function to return ordinal of a number (e.g., 1st, 2nd, 3rd)."""
-    if isinstance(n, int):  # Ensure n is an integer
-        if 10 <= n % 100 <= 20:
-            suffix = 'th'
-        else:
-            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
-        return f"{n}{suffix}"
-    else:
-        raise ValueError(f"Expected integer, got {type(n)}")
-
-# Generate restaurant candidates using GPT-4
-def get_restaurant_candidates(number_of_restaurants, city, state):
-    prompt = restaurant_prompt_template.format(number_of_restaurants=number_of_restaurants, city=city, state=state)
-    response = model.invoke(prompt)
-    return response.content.strip().split("\n")[:number_of_restaurants]
-
-# Start a new election
-def start_election(candidates, max_votes, election_type, election_name):
-    election = Election(election_name=election_name, election_type=election_type, max_votes=max_votes)
-    db.session.add(election)
-    db.session.commit()
-
-    for candidate_name in candidates:
-        candidate = Candidate(name=candidate_name.strip(), election_id=election.id)
-        db.session.add(candidate)
-    db.session.commit()
-
-    return election.id
 
 app = create_app()
 
