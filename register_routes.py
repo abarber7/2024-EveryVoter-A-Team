@@ -11,7 +11,6 @@ from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 import logging
 
-
 class RegisterRoutes:
     def register_all_routes(app):
         logging.debug("Request received at /generate-candidates-audio")
@@ -210,7 +209,7 @@ class RegisterRoutes:
                 audio_data = BytesIO(audio_file.read())
                 audio_data.name = "voice_vote.wav"
 
-                transcription = client.audio.transcriptions.create(
+                transcription = current_app.openai_client.audio.transcriptions.create(
                     model="whisper-1",
                     file=audio_data
                 )
@@ -224,39 +223,66 @@ class RegisterRoutes:
                 return jsonify({"error": f"Transcription failed: {str(e)}"}), 500
 
 
-        # Submit voice vote
         @app.route("/voice_vote", methods=["POST"])
         @login_required  # Ensure the user is logged in
         def voice_vote():
             data = request.get_json()
-            transcript = data.get("transcript").lower()
+            transcript = data.get("transcript", "").lower()
             election_id = data.get("election_id")
-            election = Election.query.get(election_id)
+            
+            print(f"Received transcript: {transcript}")
+            print(f"Received election_id: {election_id}")
 
-            if not election or election.status != 'ongoing':
+            election = Election.query.get(election_id)
+            if not election:
+                print(f"No election found with id: {election_id}")
+                return jsonify({"message": "Invalid election ID."}), 400
+            
+            if election.status != 'ongoing':
+                print(f"Election {election_id} is not ongoing. Status: {election.status}")
                 return jsonify({"message": "No active election."}), 400
 
             # Check if the user has already voted
             existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
             if existing_vote:
+                print(f"User {current_user.id} has already voted in election {election_id}")
                 return jsonify({"message": "You have already voted in this election."}), 400
 
+            candidates = election.candidates
+            print(f"Candidates for this election: {[c.name for c in candidates]}")
+
             # Find the matching candidate
-            candidate_match = difflib.get_close_matches(transcript, [c.name.lower() for c in election.candidates], n=1, cutoff=0.7)
+            candidate_names = [c.name.lower() for c in candidates]
+            candidate_match = difflib.get_close_matches(transcript, candidate_names, n=1, cutoff=0.7)
+            
             if candidate_match:
-                candidate = Candidate.query.filter_by(name=candidate_match[0], election_id=election_id).first()
+                matched_name = candidate_match[0]
+                print(f"Matched candidate name: {matched_name}")
+                candidate = next((c for c in candidates if c.name.lower() == matched_name), None)
+                
+                if candidate:
+                    print(f"Found candidate: {candidate.name} (ID: {candidate.id})")
+                    # Record the vote
+                    vote = Vote(candidate_id=candidate.id, election_id=election_id)
+                    db.session.add(vote)
 
-                # Record the vote
-                vote = Vote(candidate_id=candidate.id, election_id=election_id)
-                db.session.add(vote)
-
-                # Record the user vote to prevent multiple voting
-                user_vote = UserVote(user_id=current_user.id, election_id=election_id)
-                db.session.add(user_vote)
-                db.session.commit()
-
-                return jsonify({"message": f"Thank you! Your vote for {candidate.name} has been submitted."}), 200
+                    # Record the user vote to prevent multiple voting
+                    user_vote = UserVote(user_id=current_user.id, election_id=election_id)
+                    db.session.add(user_vote)
+                    
+                    try:
+                        db.session.commit()
+                        print(f"Vote recorded for candidate {candidate.name} in election {election_id}")
+                        return jsonify({"message": f"Thank you! Your vote for {candidate.name} has been submitted."}), 200
+                    except Exception as e:
+                        db.session.rollback()
+                        print(f"Error recording vote: {str(e)}")
+                        return jsonify({"message": "An error occurred while recording your vote."}), 500
+                else:
+                    print(f"No candidate found with name: {matched_name}")
+                    return jsonify({"message": "Candidate not found."}), 400
             else:
+                print(f"No match found for transcript: {transcript}")
                 return jsonify({"message": "Candidate not recognized."}), 400
 
 
