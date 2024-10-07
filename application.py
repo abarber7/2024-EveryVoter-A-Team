@@ -99,8 +99,9 @@ def create_app(config_name='default'):
     if not api_key or not elevenlabs_api_key:
         raise ValueError("Missing required API keys.")
 
-    client = openai.OpenAI(api_key=api_key)
+    openai_client = openai.OpenAI(api_key=api_key)
     model = ChatOpenAI(model="gpt-4", api_key=api_key)
+    app.openai_client = openai_client
     elevenclient = ElevenLabs(api_key=elevenlabs_api_key)
     app.elevenclient = elevenclient
 
@@ -116,18 +117,6 @@ def create_app(config_name='default'):
     RegisterRoutes.register_all_routes(app)
 
     return app
-
-# Function to test database connection on startup
-"""
-def test_db_connection_on_startup():
-    try:
-        with app.app_context():  # Ensure the app context is available
-            result = db.session.execute(text("SELECT 1"))
-            version_info = result.fetchone()
-            print(f"Database connection successful: {version_info[0]}")
-    except SQLAlchemyError as e:
-        print(f"Error occurred during startup DB connection test: {str(e)}")
-"""
 
 app = create_app()
 
