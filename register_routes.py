@@ -11,6 +11,18 @@ from elevenlabs import VoiceSettings
 from elevenlabs.client import ElevenLabs
 import logging
 
+from functools import wraps
+from flask import abort
+from flask_login import current_user
+
+def admin_required(func):
+    @wraps(func)
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'admin':
+            abort(403)  # Forbidden access (need to change later)
+        return func(*args, **kwargs)
+    return decorated_function
+
 class RegisterRoutes:
     def register_all_routes(app):
         logging.debug("Request received at /generate-candidates-audio")
@@ -123,6 +135,7 @@ class RegisterRoutes:
 
         # Route for displaying the restaurant election setup page
         @app.route("/setup_restaurant_election", methods=["GET", "POST"])
+        @admin_required
         def setup_restaurant_election():
             if request.method == "POST":
                 city = request.form.get('city')
@@ -141,6 +154,7 @@ class RegisterRoutes:
 
         # Route for displaying the custom election setup page
         @app.route("/setup_custom_election", methods=["GET", "POST"])
+        @admin_required
         def setup_custom_election():
             if request.method == "POST":
                 max_votes = int(request.form.get('max_votes_custom'))
