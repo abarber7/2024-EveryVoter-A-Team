@@ -1,8 +1,8 @@
-"""Integration testing broke the database. Recreate all tables
+"""Initial migration
 
-Revision ID: 6a4e42044d6d
-Revises: d97c689b9834
-Create Date: 2024-09-15 18:50:25.645542
+Revision ID: 5560acda1258
+Revises: 
+Create Date: 2024-10-16 11:08:26.920669
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6a4e42044d6d'
-down_revision = 'd97c689b9834'
+revision = '5560acda1258'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -32,6 +32,7 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('username', sa.String(length=100), nullable=False),
     sa.Column('password_hash', sa.String(length=255), nullable=False),
+    sa.Column('role', sa.String(length=50), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('username')
     )
