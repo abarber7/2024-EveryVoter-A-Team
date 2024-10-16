@@ -2,6 +2,7 @@
 
 import warnings
 import time
+import requests  # Add this import for making HTTP requests in the ping task
 from sqlalchemy.exc import SQLAlchemyError, OperationalError
 
 # Suppress specific Pydantic UserWarnings
@@ -20,6 +21,7 @@ warnings.filterwarnings(
 )
 
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from apscheduler.schedulers.background import BackgroundScheduler # for Scheduling the Simple Ping to nudge the database
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
@@ -116,9 +118,34 @@ def create_app(config_name='default'):
     # Register routes using the RegisterRoutes class
     RegisterRoutes.register_all_routes(app)
 
-    return app
+    # Ping route to interact with the database to keep the database connection alive
+    """
+    @app.route('/ping')
+    def ping():
+        try:
+            # Run a simple database query to keep the connection alive
+            result = db.session.execute(text('SELECT 1'))
+            db.session.commit()  # Commit to close the transaction properly
+            return jsonify({'status': 'alive', 'db_status': 'ok'}), 200
+        except SQLAlchemyError as e:
+            return jsonify({'status': 'alive', 'db_status': 'failed', 'error': str(e)}), 500
+    
+    # Scheduler logic to ping the route periodically
+    def ping_route():
+        try:
+            response = requests.get('http://localhost:5000/ping')
+            print('Ping status:', response.status_code)
+        except Exception as e:
+            print('Ping failed:', e)
 
-app = create_app()
+    # Initialize the scheduler to ping the route every 5 minutes
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=ping_route, trigger="interval", minutes=5)
+    scheduler.start()
+
+    return app
+    """
+app = create_app()         
 
 if __name__ == "__main__":
     
