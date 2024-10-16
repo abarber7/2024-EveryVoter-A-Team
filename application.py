@@ -142,11 +142,10 @@ def create_app(config_name='default'):
     scheduler = BackgroundScheduler()
     scheduler.add_job(func=ping_route, trigger="interval", minutes=5)
     scheduler.start()
-
-    return app
     """
+    return app
+    
 app = create_app()         
 
 if __name__ == "__main__":
-    
     app.run()
