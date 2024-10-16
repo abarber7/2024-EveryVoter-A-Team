@@ -119,6 +119,7 @@ def create_app(config_name='default'):
     RegisterRoutes.register_all_routes(app)
 
     # Ping route to interact with the database to keep the database connection alive
+    """
     @app.route('/ping')
     def ping():
         try:
@@ -143,7 +144,7 @@ def create_app(config_name='default'):
     scheduler.start()
 
     return app
-
+    """
 app = create_app()         
 
 if __name__ == "__main__":
