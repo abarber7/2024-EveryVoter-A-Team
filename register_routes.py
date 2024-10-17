@@ -19,7 +19,8 @@ def admin_required(func):
     @wraps(func)
     def decorated_function(*args, **kwargs):
         if current_user.role != 'admin':
-            abort(403)  # Forbidden access (need to change later)
+            flash("You do not have permission to access this page. Only administrators can perform this action.", "error")
+            return redirect(url_for("index"))  # Redirects to the home page for now
         return func(*args, **kwargs)
     return decorated_function
 
