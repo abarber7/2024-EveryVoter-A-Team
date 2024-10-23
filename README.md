@@ -15,7 +15,6 @@ EveryVoter allows election administrators to configure various aspects of the vo
 EveryVoter supports multiple voting methods to accommodate different voter preferences and accessibility needs:
 - **Touch-Based Voting**: Users can cast their votes using touch input.
 - **Voice-Based Voting**: Voice commands allow users to vote hands-free.
-- **Text-Based Voting**: Voters can also use text input to cast their votes.
 
 ## Vision-impaired Accessibility Support & Built-In Chat
 To bring everyone along, EveryVoter integrates LangChain and language models (LLMs) to:
@@ -43,7 +42,7 @@ On Windows, Poetry is usually added to the PATH automatically. If it isn’t, yo
 
 After installing Poetry and ensuring it's in your PATH, navigate to the root of this repository and install the dependencies by running `poetry install`.
 
-Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:app`, `OPENAI_API_KEY=your_openai_api_key_here`, and `elevenlabs_api_key=your_elevenlabs_api_key_here`. Replace `your_*_api_key_here` with your actual API key.
+Next, create a `.env` file in the root of the repository and add the following environment variables: `FLASK_APP=application:create_app`, `OPENAI_API_KEY=your_openai_api_key_here`, and `elevenlabs_api_key=your_elevenlabs_api_key_here`. Replace `your_*_api_key_here` with your actual API key.
 
 Now you can run the application using `poetry run flask run`. This command will start the Flask development server.
 
