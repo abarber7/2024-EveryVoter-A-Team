@@ -177,6 +177,42 @@ class RegisterRoutes:
             else:
                 return render_template("custom_election.html")
 
+            
+        @app.route("/delete_election/<int:election_id>", methods=["POST"])
+        @admin_required
+        @login_required
+        def delete_election(election_id):
+            # Fetch the election to delete
+            election = Election.query.get(election_id)
+            
+            if not election:
+                flash("Election not found.", "error")
+                return redirect(url_for("index"))
+            
+            # Delete associated records in a specific order
+            try:
+                # Delete related user votes first
+                UserVote.query.filter_by(election_id=election_id).delete()
+                
+                # Delete votes related to the election
+                Vote.query.filter_by(election_id=election_id).delete()
+                
+                # Delete candidates related to the election
+                Candidate.query.filter_by(election_id=election_id).delete()
+                
+                # Delete the election itself
+                db.session.delete(election)
+                db.session.commit()
+                
+                flash(f"Election '{election.election_name}' deleted successfully.", "success")
+            except SQLAlchemyError as e:
+                db.session.rollback()
+                flash(f"Failed to delete election: {str(e)}", "error")
+
+            return redirect(url_for("index"))
+
+
+
         # Route to display the voting page for an election
         @app.route("/vote/<int:election_id>", methods=["GET", "POST"])
         @login_required  # Ensure the user is logged in
