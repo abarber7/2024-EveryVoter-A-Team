@@ -1,5 +1,3 @@
-# application.py
-
 import warnings
 import time
 import os
