@@ -1,3 +1,5 @@
+"""
+"""
 from flask import current_app
 from flask_login import login_user, login_required, logout_user, current_user
 from models import User, Election, Candidate, Vote, UserVote
@@ -358,3 +360,5 @@ class RegisterRoutes:
         def index():
             elections = Election.query.filter_by(status='ongoing').all()
             return render_template("index.html", elections=elections)
+"""
+"""
