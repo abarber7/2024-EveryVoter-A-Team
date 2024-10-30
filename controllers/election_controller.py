@@ -1,5 +1,3 @@
-
-# controllers/election_controller.py
 from flask import Blueprint, render_template, current_app, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
 from models import Election

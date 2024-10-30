@@ -130,12 +130,12 @@
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('index') }}" class="back-button">Back</a>
+<a href="{{ url_for('election.index') }}" class="back-button">Back</a>
 
 <div class="vote-container">
     <h1>Vote in {{ election.election_name }}</h1>
 
-    <form action="{{ url_for('vote', election_id=election.id) }}" method="POST">
+    <form action="{{ url_for('vote.vote', election_id=election.id) }}" method="POST">
         {% for candidate in election.candidates %}
             <div class="candidate-option">
                 <input type="radio" id="candidate_{{ candidate.id }}" name="candidate" value="{{ candidate.id }}">
@@ -155,7 +155,7 @@
     <button class="voice-button" id="vote-by-voice-btn" data-election-id="{{ election.id }}">Vote by Voice</button>
 
     <!-- Button to view election progress -->
-    <a href="{{ url_for('results', election_id=election.id) }}" class="progress-button">View Election Progress</a>
+    <a href="{{ url_for('election.results', election_id=election.id) }}" class="progress-button">View Election Progress</a>
 </div>
 
 <script>

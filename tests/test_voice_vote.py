@@ -2,7 +2,7 @@ import unittest
 from flask import url_for
 from application import create_app
 from extensions import db
-from models.models import Election, Candidate, User, Vote, UserVote
+from models import Election, Candidate, User, Vote, UserVote
 import json
 import io
 
