@@ -20,6 +20,11 @@ class User(db.Model, UserMixin):  # Inherit from UserMixin
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def __str__(self):
+    # Return a readable string representation of the User instance
+    # Format: "User <username>", where <username> is the User's username
+        return f"User {self.username}"
 
 class Election(db.Model):
     __tablename__ = 'elections'
@@ -34,6 +39,12 @@ class Election(db.Model):
     candidates = db.relationship('Candidate', backref='election', lazy=True)
     votes = db.relationship('Vote', backref='election', lazy=True)
     user_votes = db.relationship('UserVote', backref='election', lazy=True)  # Track which users have voted
+
+    def __str__(self):
+    # Return a readable string representation of the Election instance
+    # Format: "<election_name> (<election_type>)", where <election_name> is the
+    # name of the election and <election_type> is its type (e.g., Presidential)
+        return f"{self.election_name} ({self.election_type})"
 
 class Candidate(db.Model):
     __tablename__ = 'candidates'

@@ -20,6 +20,24 @@ warnings.filterwarnings(
     module='pydantic._internal._fields'
 )
 
+# Suppress deprecation warnings from the langchain module
+# Langchain recommends migrating certain imports to langchain-community.
+# This filter is temporary to avoid cluttering output with warnings until the migration is fully adopted.
+import warnings
+warnings.filterwarnings(
+    "ignore", 
+    category=DeprecationWarning, 
+    module="langchain"
+)
+
+from langchain.chat_models import LangChainDeprecationWarning  # Import the specific warning
+
+# Suppress LangChainDeprecationWarning related to deprecated imports
+warnings.filterwarnings(
+    "ignore", 
+    category=LangChainDeprecationWarning
+)
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
 from apscheduler.schedulers.background import BackgroundScheduler # for Scheduling the Simple Ping to nudge the database
 from dotenv import load_dotenv
