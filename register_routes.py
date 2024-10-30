@@ -1,6 +1,6 @@
 from flask import current_app
 from flask_login import login_user, login_required, logout_user, current_user
-from models.models import User, Election, Candidate, Vote, UserVote
+from models import User, Election, Candidate, Vote, UserVote
 from flask import render_template, request, redirect, url_for, flash, jsonify, send_file
 from extensions import db
 from sqlalchemy import text

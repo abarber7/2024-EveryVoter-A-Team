@@ -113,7 +113,7 @@ def create_app(config_name='default'):
 
     # Register routes
     with app.app_context():
-        from models.models import Election, Candidate, Vote, User, UserVote
+        from models import Election, Candidate, Vote, User, UserVote
 
     # Register routes using the RegisterRoutes class
     RegisterRoutes.register_all_routes(app)

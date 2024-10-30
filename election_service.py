@@ -1,4 +1,4 @@
-from models.models import Election, Candidate
+from models import Election, Candidate
 class ElectionService:
     def __init__(self, model, db):
         """Initialize the ElectionService with GPT-4 model and database session."""
