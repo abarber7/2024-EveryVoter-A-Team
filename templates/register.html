@@ -79,7 +79,7 @@
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('index') }}" class="back-button">Back</a>
+<a href="{{ url_for('election.index') }}" class="back-button">Back</a>
 <div class="register-container">
     <form action="{{ url_for('auth.register') }}" method="POST">
         <h2>Sign Up</h2>
