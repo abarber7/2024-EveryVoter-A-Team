@@ -53,3 +53,4 @@ To run the tests, run `python -m unittest discover tests`.
 For the current version, you can enter restaurant information, select Generate Restaurants, then begin the election.
 
 To vote by voice, first set up an election. Then, press "Speak Now" to speak and cast your vote.
+
