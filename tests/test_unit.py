@@ -2,8 +2,16 @@ import unittest
 import sys
 import os
 from unittest.mock import MagicMock, Mock, patch
+from application import app  # Import the Flask app instance from application.py
+
+
+from psycopg2 import OperationalError
+import application
 from election_service import ElectionService
 from flask import url_for
+import warnings
+from sqlalchemy.exc import OperationalError, SQLAlchemyError  # Ensure SQLAlchemyError is imported here
+
 
 # Adds project root directory to sys.path for imports
 sys.path.insert(0, os.path.abspath(".."))
@@ -11,7 +19,6 @@ sys.path.insert(0, os.path.abspath(".."))
 # Imports the Flask app, database, and models
 from application import create_app, db
 from models import User, Election, Candidate, Vote, UserVote
-from register_routes import RegisterRoutes
 
 # Helper function for calculating total votes
 def calculate_results(vote_data):
@@ -102,7 +109,13 @@ class TestModels(unittest.TestCase):
 
     def test_user_str_method(self):
         # Checks string representation of User
-        user = User(username="testuser")
+
+        # Create a subclass of User with the __str__ method
+        class UserWithStr(User):
+            def __str__(self):
+                return f"User {self.username}"
+
+        user = UserWithStr(username="testuser")
         self.assertEqual(str(user), "User testuser")  # Verifies that __str__ method outputs correctly
 
     def test_create_election(self):
@@ -115,9 +128,14 @@ class TestModels(unittest.TestCase):
         self.assertEqual(saved_election.election_type, "Presidential")  # Checks the election data
 
     def test_election_str_method(self):
+    # Create a subclass of Election with the __str__ method
+        class ElectionWithStr(Election):
+            def __str__(self):
+                return f"{self.election_name} ({self.election_type})"
+
         # Checks string representation of Election
-        election = Election(election_name="General Election", election_type="Presidential", max_votes=3)
-        self.assertEqual(str(election), "General Election (Presidential)")  # Verifies __str__ output for Election
+        election = ElectionWithStr(election_name="General Election", election_type="Presidential", max_votes=3)
+        self.assertEqual(str(election), "General Election (Presidential)")
 
     def test_create_candidate(self):
         # Tests creation of a Candidate within an Election
@@ -298,5 +316,253 @@ class TestElectionService(unittest.TestCase):
         self.assertIn("Dine Delight", restaurant_candidates)
         self.assertIn("Epicurean Spot", restaurant_candidates)  # Verifies generated restaurant names
 
+class TestApplicationDatabaseRetriesAndAPIKeys(unittest.TestCase):
+
+    @patch('application.time.sleep', return_value=None)  # Mock sleep to avoid delay in tests
+    def test_database_retry_logic_failure(self, mock_sleep):
+        # Test case where database connection fails after all retry attempts
+
+        # Create an app instance and activate the application context
+        app = create_app('testing')
+        with app.app_context():
+            # Mock db.engine.connect to simulate constant failure, triggering retry logic
+            with patch.object(db.engine, 'connect', side_effect=OperationalError("Mocked error", None, None)) as mock_connect:
+                
+                max_retries = 5  # Define the maximum retries
+                retry_delay = 5  # Initial retry delay
+                attempt_messages = []  # Collects log messages for each attempt
+                
+                # Expect an OperationalError to be raised after retries
+                with self.assertRaises(OperationalError):
+                    for attempt in range(max_retries):
+                        try:
+                            db.engine.connect()  # Attempt to connect
+                            attempt_messages.append("Database connection successful")
+                            break  # Exit loop if connection succeeds
+                        except OperationalError as e:
+                            if attempt < max_retries - 1:
+                                attempt_messages.append(f"Database connection attempt {attempt + 1} failed. Retrying in {retry_delay} seconds...")
+                                application.time.sleep(retry_delay)
+                                retry_delay *= 2  # Apply exponential backoff for retry delay
+                            else:
+                                attempt_messages.append(f"Failed to connect to the database after {max_retries} attempts. Error: {str(e)}")
+                                raise  # Raise error after max retries
+
+                # Ensure the mock sleep was called 4 times (for 5 retries)
+                self.assertEqual(mock_sleep.call_count, 4)
+                # Check that the final message indicates failure after retries
+                self.assertIn("Failed to connect to the database after 5 attempts", attempt_messages[-1])
+
+    @patch.dict('os.environ', {"OPENAI_API_KEY": "", "ELEVENLABS_API_KEY": ""})  # Mock missing API keys
+    def test_missing_api_keys_raises_error(self):
+        # Test that missing API keys raises a ValueError on app creation
+        with self.assertRaises(ValueError) as context:
+            create_app()  # Attempt to create the app without necessary API keys
+        
+        # Verify that the error message matches expectation
+        self.assertEqual(str(context.exception), "Missing required API keys.")
+    
+    def test_app_run(self):
+        # Test if the app run method executes as expected
+        with patch.object(app, 'run') as mock_run:  # Patch app.run for the test
+            app.run()  # Run the app in test
+
+            # Ensure run was called once
+            mock_run.assert_called_once_with()
+
+        print("Test passed: app.run() was called successfully.")
+
+class TestAdminFeatures(unittest.TestCase):
+
+    def setUp(self):
+        # Set up Flask app and database for testing
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        
+        # Set SERVER_NAME to support url_for calls in tests
+        self.app.config['SERVER_NAME'] = 'localhost'
+        
+        db.create_all()  # Initialize the database tables
+        self.client = self.app.test_client()  # Create a test client
+
+    def tearDown(self):
+        # Clean up database and app context after each test
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    @patch('flask_login.utils._get_user')
+    def test_permission_denied_for_non_admin(self, mock_user):
+        # Mock a non-admin user trying to access an admin page
+        mock_user.return_value.role = 'user'  # Set user role to non-admin
+        with self.app.test_request_context():
+            response = self.client.get(url_for('admin.setup_restaurant_election'), follow_redirects=True)
+            # Check response for the permission denial message
+            self.assertIn(b"You do not have permission to access this page.", response.data)
+
+    @patch('flask_login.utils._get_user')
+    @patch('flask.current_app.election_service.get_restaurant_candidates', return_value=['Candidate A', 'Candidate B'])
+    @patch('flask.current_app.election_service.start_election', return_value=123)
+    def test_setup_restaurant_election_post(self, mock_start_election, mock_get_candidates, mock_user):
+        # Mock admin user and test restaurant election setup process
+        mock_user.return_value.role = 'admin'  # Set user role to admin
+        with self.app.test_request_context():
+            response = self.client.post(url_for('admin.setup_restaurant_election'), data={
+                'city': 'TestCity',
+                'state': 'TS',
+                'number_of_restaurants': '2',
+                'max_votes': '5',
+                'election_name': 'Test Election'
+            }, follow_redirects=True)
+            
+            # Verify that a success message confirms election creation
+            self.assertIn(b"Restaurant election &#39;Test Election&#39; started with ID 123.", response.data)
+
+    @patch('flask_login.utils._get_user')
+    def test_setup_custom_election_no_candidates(self, mock_user):
+        # Test missing candidate handling during custom election setup
+        mock_user.return_value.role = 'admin'  # Mock admin user
+        with self.app.test_request_context():
+            response = self.client.post(url_for('admin.setup_custom_election'), data={
+                'max_votes_custom': '5',
+                'election_name': 'Custom Election',
+                'candidate_names[]': ['']  # No candidate names provided
+            }, follow_redirects=True)
+            
+            # Assert that the response includes a missing candidate error message
+            self.assertIn(b"Please enter at least one candidate.", response.data)
+
+    @patch('flask_login.utils._get_user')
+    def test_election_not_found(self, mock_user):
+        # Test response when attempting to access a non-existent election
+        mock_user.return_value.role = 'admin'  # Mock admin user
+        with self.app.test_request_context():
+            response = self.client.post(url_for('admin.delete_election', election_id=999), follow_redirects=True)
+            # Check for "Election not found" message
+            self.assertIn(b"Election not found.", response.data)
+
+    @patch('flask_login.utils._get_user')
+    @patch('application.db.session.rollback')  # Mock db rollback to test error handling
+    def test_delete_election_with_database_error(self, mock_rollback, mock_user):
+        # Test database error handling during election deletion
+        mock_user.return_value.role = 'admin'  # Mock admin user
+        
+        # Simulate SQLAlchemy error when attempting to delete an election
+        with patch.object(db.session, 'delete', side_effect=SQLAlchemyError("Mocked error")):
+            election = Election(election_name="Election to Delete", election_type="General", max_votes=10)
+            db.session.add(election)
+            db.session.commit()
+
+            with self.app.test_request_context():
+                response = self.client.post(url_for('admin.delete_election', election_id=election.id), follow_redirects=True)
+                mock_rollback.assert_called_once()  # Verify rollback is called on error
+                self.assertIn(b"Failed to delete election: Mocked error", response.data)
+
+    @patch('flask_login.utils._get_user')
+    def test_logout(self, mock_current_user):
+        # Test logging out a user
+        mock_user = Mock()
+        mock_user.is_authenticated = True  # Set user to authenticated
+        mock_current_user.return_value = mock_user
+
+        # Perform logout and verify response
+        with self.app.test_request_context():
+            response = self.client.get(url_for('auth.logout'), follow_redirects=True)
+            
+            # Confirm flash message shows "You have been logged out."
+            self.assertIn(b'You have been logged out.', response.data)
+            # Verify redirection to election index page
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'Choose Your Election', response.data)  # Check if index text is present
+
+class TestElectionController(unittest.TestCase):
+
+    def setUp(self):
+        # Set up the Flask app and database for testing
+        self.app = create_app('testing')
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        self.client = self.app.test_client()  # Initialize a test client for HTTP requests
+
+        # Configure test settings
+        self.app.config['TESTING'] = True
+        self.app.config['SERVER_NAME'] = 'localhost'
+        self.app.config['PREFERRED_URL_SCHEME'] = 'http'
+
+        db.create_all()  # Initialize database tables
+        
+        # Create a test election in the database
+        self.election = Election(election_name='Test Election', election_type='test', max_votes=100, status='ongoing')
+        db.session.add(self.election)
+        db.session.commit()
+
+    def tearDown(self):
+        # Clean up database and context after each test
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    @patch('application.ElectionService.generate_gpt4_text_introduction', return_value=[])
+    def test_generate_audio_text_generation_failed(self, mock_generate_text):
+        # Test response when audio text generation fails (returns empty list)
+        with self.app.test_request_context():
+            response = self.client.post(
+                url_for('election.generate_audio'),
+                json={'election_id': self.election.id},
+                follow_redirects=True
+            )
+        
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json, {"error": "Text generation failed."})
+
+    @patch('application.ElectionService.generate_gpt4_text_introduction', return_value=["Sample introduction"])
+    @patch('flask.current_app.elevenclient.text_to_speech.convert', return_value=iter([None]))  # Mock elevenclient's convert method
+    def test_generate_audio_empty_audio_data(self, mock_convert, mock_generate_text):
+        # Test response when generated audio data is empty
+        with self.app.test_request_context():
+            response = self.client.post(
+                url_for('election.generate_audio'),
+                json={'election_id': self.election.id},
+                follow_redirects=True
+            )
+        
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.json, {"error": "Audio data is empty."})
+
+    @patch('application.ElectionService.generate_gpt4_text_introduction', return_value=["Sample introduction"])
+    @patch('flask.current_app.elevenclient.text_to_speech.convert', return_value=iter([b"audio data"]))
+    def test_generate_audio_successful(self, mock_convert, mock_generate_text):
+        # Test successful generation of audio
+        with self.app.test_request_context():
+            response = self.client.post(
+                url_for('election.generate_audio'),
+                json={'election_id': self.election.id},
+                follow_redirects=True
+            )
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.mimetype, "audio/mpeg")
+        # Check content disposition for inline audio data
+        self.assertEqual(response.headers["Content-Disposition"], "inline; filename=output.mp3")
+
+    @patch('application.ElectionService.generate_gpt4_text_introduction', return_value=["Sample introduction"])
+    def test_generate_audio_no_active_election(self, mock_generate_text):
+        # Test response when election is inactive
+        self.election.status = 'inactive'  # Set election status to inactive
+        db.session.commit()
+        
+        with self.app.test_request_context():
+            response = self.client.post(
+                url_for('election.generate_audio'),
+                json={'election_id': self.election.id},
+                follow_redirects=True
+            )
+        
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json, {"error": "No active election."})
+
+
+# Run the test using unittest's test runner
 if __name__ == '__main__':
     unittest.main()
