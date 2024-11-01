@@ -289,6 +289,111 @@ h1 {
     cursor: pointer;
 }
 
+/* Authentication Forms (Login & Register) */
+.login-container,
+.register-container {
+    max-width: 400px;
+    margin: 60px auto;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    text-align: center;
+}
+
+.login-container h2,
+.register-container h2 {
+    color: #fff;
+    margin-bottom: 30px;
+    font-size: 24px;
+}
+
+.login-container .form-group,
+.register-container .form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.login-container label,
+.register-container label {
+    display: block;
+    margin-bottom: 8px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.login-container input[type="text"],
+.login-container input[type="password"],
+.register-container input[type="text"],
+.register-container input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.login-container input[type="submit"],
+.register-container input[type="submit"] {
+    width: 100%;
+    padding: 12px;
+    background-color: #4a9eff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s ease;
+}
+
+.login-container input[type="submit"]:hover,
+.register-container input[type="submit"]:hover {
+    background-color: #2486ff;
+}
+
+.register-link,
+.login-link {
+    margin-top: 20px;
+    color: #fff;
+}
+
+.register-link a,
+.login-link a {
+    color: #4a9eff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.register-link a:hover,
+.login-link a:hover {
+    color: #2486ff;
+}
+
+/* Flash Messages */
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash-message {
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    color: #fff;
+}
+
+.flash-message.error {
+    background-color: rgba(220, 53, 69, 0.2);
+    border: 1px solid #dc3545;
+}
+
+.flash-message.success {
+    background-color: rgba(40, 167, 69, 0.2);
+    border: 1px solid #28a745;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
     .form-container {
@@ -311,4 +416,19 @@ h1 {
     .admin-controls {
         margin-top: 1rem;
     }
+}
+
+.elections-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #fff;
+    width: 100%;
+}
+
+.elections-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 3rem;
+    width: 100%;
 }
