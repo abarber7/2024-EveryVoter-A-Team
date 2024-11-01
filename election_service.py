@@ -18,7 +18,7 @@ class ElectionService:
             introductions.append(gpt_text.content)
         return introductions
 
-    # Helper function to return ordinal of a number
+    # Helper function that returns ordinal of a number
     def ordinal(self, n):
         if isinstance(n, int):
             if 10 <= n % 100 <= 20:
