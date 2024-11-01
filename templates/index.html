@@ -1,5 +1,4 @@
 <!-- index.html -->
-
 {% extends "base.html" %}
 
 {% block title %}
@@ -23,6 +22,11 @@
         text-align: center;
     }
 
+    h2 {
+        margin-top: 30px;
+        margin-bottom: 20px;
+    }
+
     .election-button {
         margin: 20px;
         padding: 15px 30px;
@@ -43,16 +47,80 @@
     }
 
     .election-link {
-        margin: 5px;
+        margin: 15px 0;  /* Increased vertical margin */
+        padding: 10px;   /* Added padding */
         font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        min-width: 600px;  /* Set minimum width to prevent cramping */
     }
 
     .election-link a {
         text-decoration: none;
         color: #2980b9;
+        flex: 0 0 auto;  /* Prevent link from shrinking */
+        min-width: 200px;  /* Minimum width for election name */
     }
 
     .election-link a:hover {
+        text-decoration: underline;
+    }
+
+    .election-timing {
+        font-size: 0.9em;
+        color: #888;
+        flex: 1;  /* Allow timing to take available space */
+        text-align: left;
+        white-space: nowrap;  /* Prevent wrapping */
+    }
+
+    .time-indicator {
+        font-weight: bold;
+        color: #e67e22;
+    }
+
+    .exact-time {
+        font-size: 0.85em;
+        color: #7f8c8d;
+        margin-left: 8px;
+    }
+
+    .admin-controls {
+        flex: 0 0 auto;  /* Prevent shrinking */
+        margin-left: 20px;
+    }
+
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-danger:hover {
+        background-color: #c0392b;
+    }
+
+    /* Welcome message styling */
+    .welcome-message {
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .welcome-message p {
+        margin: 10px 0;
+    }
+
+    .welcome-message a {
+        color: #2980b9;
+        text-decoration: none;
+    }
+
+    .welcome-message a:hover {
         text-decoration: underline;
     }
 </style>
@@ -62,34 +130,49 @@
 <div class="election-options">
     <h1>Choose Your Election</h1>
 
-    {% if current_user.is_authenticated %}
-        <p>Welcome, {{ current_user.username }}!</p>
-        <a href="{{ url_for('auth.logout') }}">Log Out</a>
-    {% else %}
-        <p>Please <a href="{{ url_for('auth.login') }}">log in</a> or <a href="{{ url_for('auth.register') }}">sign up</a> to vote in an election.</p>
-    {% endif %}
+    <div class="welcome-message">
+        {% if current_user.is_authenticated %}
+            <p>Welcome, {{ current_user.username }}!</p>
+            <a href="{{ url_for('auth.logout') }}">Log Out</a>
+        {% else %}
+            <p>Please <a href="{{ url_for('auth.login') }}">log in</a> or <a href="{{ url_for('auth.register') }}">sign up</a> to vote in an election.</p>
+        {% endif %}
+    </div>
 
-    <!-- Links for Ongoing Elections -->
     {% if elections %}
         <h2>Ongoing Elections</h2>
         {% for election in elections %}
             <div class="election-link">
                 <a href="{{ url_for('vote.vote', election_id=election.id) }}">{{ election.election_name }}</a>
-
-                <!-- Display delete button for admins by each election -->
-                {% if current_user.role == 'admin' %}
-                    <form action="{{ url_for('admin.delete_election', election_id=election.id) }}" method="post" style="display:inline;">
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this election?');">Delete</button>
-                    </form>
+                
+                {% if election.time_until_start %}
+                    <div class="election-timing">
+                        <span class="time-indicator">
+                            {% if election.time_until_start < 24 %}
+                                Starts in {{ election.time_until_start }} hours
+                            {% else %}
+                                Starts in {{ (election.time_until_start / 24)|round|int }} days
+                            {% endif %}
+                        </span>
+                        {% if election.local_start_date %}
+                            <span class="exact-time">({{ election.local_start_date }})</span>
+                        {% endif %}
+                    </div>
                 {% endif %}
 
+                {% if current_user.role == 'admin' %}
+                    <div class="admin-controls">
+                        <form action="{{ url_for('admin.delete_election', election_id=election.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this election?');">Delete</button>
+                        </form>
+                    </div>
+                {% endif %}
             </div>
         {% endfor %}
     {% else %}
         <p>No ongoing elections at the moment.</p>
     {% endif %}
 
-    <!-- Buttons for creating new elections -->
     <a href="{{ url_for('admin.setup_restaurant_election') }}" class="election-button">
         Restaurant Election
     </a>

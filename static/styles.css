@@ -123,3 +123,45 @@ body {
 .back-button i {
     margin-right: 8px;
 }
+
+.election-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    margin: 0.5rem 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.election-container:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.election-name {
+    flex: 1;
+}
+
+.election-timing {
+    margin-left: 1rem;
+    text-align: right;
+    font-size: 0.9em;
+    color: #a8c7ff;
+}
+
+.time-indicator {
+    display: block;
+    font-weight: bold;
+}
+
+.exact-time {
+    display: block;
+    font-size: 0.85em;
+    color: #8ba8db;
+    margin-top: 0.2rem;
+}
+
+.admin-controls {
+    margin-left: 1rem;
+}
