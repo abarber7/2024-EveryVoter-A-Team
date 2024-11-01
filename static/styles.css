@@ -165,3 +165,150 @@ body {
 .admin-controls {
     margin-left: 1rem;
 }
+
+.election-dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    color: #fff;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: #fff;
+}
+
+.welcome-message {
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.auth-link {
+    color: #4a9eff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.auth-link:hover {
+    color: #2486ff;
+}
+
+.elections-container {
+    margin-bottom: 3rem;
+}
+
+.elections-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #fff;
+}
+
+.election-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.election-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: background-color 0.3s ease;
+}
+
+.election-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.election-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.election-title {
+    font-size: 1.2rem;
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.election-title:hover {
+    color: #4a9eff;
+}
+
+.election-timing {
+    text-align: center;
+    color: #a8c7ff;
+}
+
+.time-indicator {
+    display: block;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.exact-time {
+    display: block;
+    font-size: 0.8rem;
+    color: #8ba8db;
+    margin-top: 0.2rem;
+}
+
+.admin-controls {
+    margin-left: 2rem;
+}
+
+.delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.delete-btn:hover {
+    background-color: #c82333;
+}
+
+.no-elections {
+    text-align: center;
+    color: #a8c7ff;
+    font-size: 1.1rem;
+    padding: 2rem;
+}
+
+.admin-actions {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.action-button {
+    background-color: #4a9eff;
+    color: white;
+    text-decoration: none;
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+    background-color: #2486ff;
+}
