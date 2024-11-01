@@ -67,50 +67,76 @@
         margin: 5px;
         font-size: 14px;
     }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <a href="{{ url_for('election.index') }}" class="back-button">Back</a>
 
-<h1>Set Up a Custom Election</h1>
+<div class="container mt-5">
+    <h1>Set Up a Custom Election</h1>
+    
+    <form method="POST" action="{{ url_for('admin.setup_custom_election') }}">
+        <div class="form-group">
+            <label for="election_name">Election Name:</label>
+            <input type="text" class="form-control" id="election_name" name="election_name" required>
+        </div>
 
-<form action="{{ url_for('admin.setup_custom_election') }}" method="POST">
-    <label for="election_name">Election Name:</label><br>
-    <input type="text" id="election_name" name="election_name" required><br><br>
+        <div class="form-group">
+            <label for="max_votes_custom">Maximum Votes:</label>
+            <input type="number" class="form-control" id="max_votes_custom" name="max_votes_custom" min="1" required>
+        </div>
 
-    <label for="max_votes_custom">Maximum Votes:</label><br>
-    <input type="number" id="max_votes_custom" name="max_votes_custom" min="1" required><br><br>
+        <div class="form-group">
+            <label for="start_date">Start Date (Optional):</label>
+            <input type="datetime-local" class="form-control" id="start_date" name="start_date">
+        </div>
 
-    <label>Candidate Names:</label><br>
-    <div id="candidate-container">
-        <input type="text" name="candidate_names[]" required><br>
-    </div>
-    <div class="candidate-buttons">
-        <button type="button" onclick="addCandidate()">Add Candidate</button>
-        <button type="button" onclick="removeCandidate()">Remove Candidate</button>
-    </div>
+        <div class="form-group">
+            <label for="end_date">End Date (Optional):</label>
+            <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+        </div>
 
-    <input type="submit" value="Start Election">
-</form>
+        <div class="form-group">
+            <label>Candidate Names:</label>
+            <div id="candidate-container">
+                <input type="text" class="form-control" name="candidate_names[]" required>
+            </div>
+        </div>
+
+        <div class="candidate-buttons">
+            <button type="button" class="btn btn-secondary" onclick="addCandidateField()">Add Candidate</button>
+            <button type="button" class="btn btn-danger" onclick="removeCandidateField()">Remove Candidate</button>
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Create Election</button>
+    </form>
+</div>
 
 <script>
-function addCandidate() {
-    var container = document.getElementById('candidate-container');
-    var input = document.createElement('input');
+function addCandidateField() {
+    const container = document.getElementById('candidate-container');
+    const input = document.createElement('input');
     input.type = 'text';
     input.name = 'candidate_names[]';
+    input.className = 'form-control';
     input.required = true;
     container.appendChild(input);
-    container.appendChild(document.createElement('br'));
 }
 
-function removeCandidate() {
-    var container = document.getElementById('candidate-container');
-    var inputs = container.getElementsByTagName('input');
-    if (inputs.length > 1) {
-        container.removeChild(inputs[inputs.length - 1]);
-        container.removeChild(container.lastChild); // Remove the <br> element
+function removeCandidateField() {
+    const container = document.getElementById('candidate-container');
+    if (container.children.length > 1) {
+        container.removeChild(container.lastChild);
     }
 }
 </script>

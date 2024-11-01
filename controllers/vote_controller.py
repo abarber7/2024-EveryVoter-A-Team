@@ -13,8 +13,11 @@ vote_bp = Blueprint('vote', __name__)
 def vote(election_id):
     election = Election.query.get(election_id)
     
-    if not election or election.status != 'ongoing':
-        flash("Election not found or has ended.", "error")
+    if not election or not election.is_active:
+        if election and election.time_until_start:
+            flash(f"This election will start in {election.time_until_start} hours.", "info")
+        else:
+            flash("Election not found or has ended.", "error")
         return redirect(url_for("election.index"))
 
     existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
