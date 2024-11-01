@@ -36,8 +36,15 @@ class ElectionService:
         return response.content.strip().split("\n")[:number_of_restaurants]
 
     # Start a new election
-    def start_election(self, candidates, max_votes, election_type, election_name):
-        election = Election(election_name=election_name, election_type=election_type, max_votes=max_votes)
+    def start_election(self, candidates, max_votes, election_type, election_name, start_date=None, end_date=None):
+        election = Election(
+            election_name=election_name,
+            election_type=election_type,
+            max_votes=max_votes,
+            start_date=start_date,
+            end_date=end_date
+        )
+        
         self.db.session.add(election)
         self.db.session.commit()
 

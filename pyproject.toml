@@ -22,6 +22,7 @@ pyodbc = "^5.1.0"
 flask-migrate = "^4.0.7"
 flask-login = "^0.6.3"
 apscheduler = "^3.10.4"
+pytz = "^2024.2"
 
 
 [build-system]

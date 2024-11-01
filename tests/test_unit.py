@@ -221,7 +221,7 @@ class TestRegisterRoutes(unittest.TestCase):
             self.assertEqual(response.status_code, 200)
 
             # Check for a substring that confirms successful creation
-            self.assertIn(b"Custom election &#39;Custom Test Election&#39; started with ID", response.data)
+            self.assertIn(b"Custom election &#39;Custom Test Election&#39; created successfully.", response.data)
             # Checks for success message in HTML response
 
     def test_home_route(self):
@@ -417,7 +417,7 @@ class TestAdminFeatures(unittest.TestCase):
             }, follow_redirects=True)
             
             # Verify that a success message confirms election creation
-            self.assertIn(b"Restaurant election &#39;Test Election&#39; started with ID 123.", response.data)
+            self.assertIn(b"Restaurant election &#39;Test Election&#39; created successfully.", response.data)
 
     @patch('flask_login.utils._get_user')
     def test_setup_custom_election_no_candidates(self, mock_user):

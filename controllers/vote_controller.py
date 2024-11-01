@@ -5,6 +5,8 @@ from extensions import db
 import difflib
 from io import BytesIO
 from flask import current_app
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 vote_bp = Blueprint('vote', __name__)
 
@@ -13,9 +15,34 @@ vote_bp = Blueprint('vote', __name__)
 def vote(election_id):
     election = Election.query.get(election_id)
     
-    if not election or election.status != 'ongoing':
-        flash("Election not found or has ended.", "error")
+    if not election:
+        flash("Election not found.", "error")
         return redirect(url_for("election.index"))
+
+    if not election.is_active:
+        if election.time_until_start:
+            hours = election.time_until_start
+            if hours < 24:
+                flash(f"This election will start in {hours} hours.", "info")
+            else:
+                days = int(hours // 24)
+                remaining_hours = round(hours % 24, 1)
+                if remaining_hours > 0:
+                    flash(f"This election will start in {days} days and {remaining_hours} hours.", "info")
+                else:
+                    flash(f"This election will start in {days} days.", "info")
+            if election.local_start_date:
+                flash(f"Start time: {election.local_start_date}", "info")
+            return redirect(url_for("election.index"))
+        elif election.start_date and datetime.now(timezone.utc) < election.start_date:
+            flash(f"This election will start at {election.local_start_date}.", "info")
+            return redirect(url_for("election.index"))
+        elif election.end_date and datetime.now(timezone.utc) > election.end_date:
+            flash(f"This election ended at {election.local_end_date}.", "info")
+            return redirect(url_for("election.index"))
+        else:
+            flash("This election is not active.", "error")
+            return redirect(url_for("election.index"))
 
     existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
     if existing_vote:

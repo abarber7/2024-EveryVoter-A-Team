@@ -51,30 +51,61 @@
     input[type="submit"]:hover {
         background-color: #2ecc71;
     }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    .form-control {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <a href="{{ url_for('election.index') }}" class="back-button">Back</a>
 
-<h1>Set Up a Restaurant Election</h1>
+<div class="container mt-5">
+    <h1>Set Up a Restaurant Election</h1>
+    
+    <form method="POST" action="{{ url_for('admin.setup_restaurant_election') }}">
+        <div class="form-group">
+            <label for="election_name">Election Name:</label>
+            <input type="text" class="form-control" id="election_name" name="election_name" required>
+        </div>
 
-<form action="{{ url_for('admin.setup_restaurant_election') }}" method="POST">
-    <label for="election_name">Election Name:</label><br>
-    <input type="text" id="election_name" name="election_name" required><br><br>
+        <div class="form-group">
+            <label for="city">City:</label>
+            <input type="text" class="form-control" id="city" name="city" required>
+        </div>
 
-    <label for="city">City:</label><br>
-    <input type="text" id="city" name="city" required><br><br>
+        <div class="form-group">
+            <label for="state">State:</label>
+            <input type="text" class="form-control" id="state" name="state" required>
+        </div>
 
-    <label for="state">State:</label><br>
-    <input type="text" id="state" name="state" required><br><br>
+        <div class="form-group">
+            <label for="number_of_restaurants">Number of Restaurants:</label>
+            <input type="number" class="form-control" id="number_of_restaurants" name="number_of_restaurants" min="2" max="10" required>
+        </div>
 
-    <label for="number_of_restaurants">Number of Restaurants:</label><br>
-    <input type="number" id="number_of_restaurants" name="number_of_restaurants" min="1" required><br><br>
+        <div class="form-group">
+            <label for="max_votes">Maximum Votes:</label>
+            <input type="number" class="form-control" id="max_votes" name="max_votes" min="1" required>
+        </div>
 
-    <label for="max_votes">Maximum Votes:</label><br>
-    <input type="number" id="max_votes" name="max_votes" min="1" required><br><br>
+        <div class="form-group">
+            <label for="start_date">Start Date (Optional):</label>
+            <input type="datetime-local" class="form-control" id="start_date" name="start_date">
+        </div>
 
-    <input type="submit" value="Start Election">
-</form>
+        <div class="form-group">
+            <label for="end_date">End Date (Optional):</label>
+            <input type="datetime-local" class="form-control" id="end_date" name="end_date">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create Election</button>
+    </form>
+</div>
 {% endblock %}
