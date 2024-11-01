@@ -5,7 +5,7 @@ from models import Election, Candidate, Vote, UserVote
 from extensions import db
 from sqlalchemy.exc import SQLAlchemyError
 from functools import wraps
-
+from zoneinfo import ZoneInfo
 admin_bp = Blueprint('admin', __name__)
 
 def admin_required(f):
@@ -18,6 +18,23 @@ def admin_required(f):
     return decorated_function
 
 
+def convert_local_to_utc(date_str):
+    """Convert local datetime string to UTC datetime object"""
+    if not date_str or date_str == "No range":
+        return None
+        
+    # Parse the datetime string from the form
+    local_dt = datetime.fromisoformat(date_str)
+    
+    # Add timezone info for Pacific Time
+    pacific = ZoneInfo('America/Los_Angeles')
+    local_dt = local_dt.replace(tzinfo=pacific)
+    
+    # Convert to UTC
+    utc_dt = local_dt.astimezone(timezone.utc)
+    return utc_dt
+
+
 @admin_bp.route("/setup_restaurant_election", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -28,28 +45,19 @@ def setup_restaurant_election():
         number_of_restaurants = int(request.form.get('number_of_restaurants'))
         max_votes = int(request.form.get('max_votes'))
         election_name = request.form.get('election_name')
-        start_date_str = request.form.get('start_date')
-        end_date_str = request.form.get('end_date')
+        
+        # Convert datetime inputs to UTC
+        start_date = convert_local_to_utc(request.form.get('start_date'))
+        end_date = convert_local_to_utc(request.form.get('end_date'))
 
-        # Parse dates if provided
-        start_date = None
-        end_date = None
-        try:
-            if start_date_str and start_date_str != "No range":
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
-            if end_date_str and end_date_str != "No range":
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
-                
-            # Validate date range if both dates are provided
-            if start_date and end_date and start_date >= end_date:
-                flash("End date must be after start date.", "error")
-                return redirect(url_for("admin.setup_restaurant_election"))
-                
-        except ValueError:
-            flash("Invalid date format. Please use the date picker.", "error")
+        # Validate date range if both dates are provided
+        if start_date and end_date and start_date >= end_date:
+            flash("End date must be after start date.", "error")
             return redirect(url_for("admin.setup_restaurant_election"))
 
-        candidates = current_app.election_service.get_restaurant_candidates(number_of_restaurants, city, state)
+        candidates = current_app.election_service.get_restaurant_candidates(
+            number_of_restaurants, city, state)
+        
         election_id = current_app.election_service.start_election(
             candidates, 
             max_votes, 
@@ -59,11 +67,16 @@ def setup_restaurant_election():
             end_date=end_date
         )
         
-        flash(f"Restaurant election '{election_name}' started with ID {election_id}.", "info")
+        pacific = ZoneInfo('America/Los_Angeles')
+        if start_date:
+            local_start = start_date.astimezone(pacific)
+            flash(f"Restaurant election '{election_name}' created and will start at {local_start.strftime('%I:%M %p %Z on %B %d, %Y')}", "info")
+        else:
+            flash(f"Restaurant election '{election_name}' created successfully.", "info")
+            
         return redirect(url_for("election.index"))
         
     return render_template("restaurant_election.html")
-
 @admin_bp.route("/setup_custom_election", methods=["GET", "POST"])
 @login_required
 @admin_required
@@ -72,8 +85,10 @@ def setup_custom_election():
         max_votes = int(request.form.get('max_votes_custom'))
         election_name = request.form.get('election_name')
         candidate_names = request.form.getlist('candidate_names[]')
-        start_date_str = request.form.get('start_date')
-        end_date_str = request.form.get('end_date')
+
+        # Convert datetime inputs to UTC
+        start_date = convert_local_to_utc(request.form.get('start_date'))
+        end_date = convert_local_to_utc(request.form.get('end_date'))
 
         candidates = [name for name in candidate_names if name.strip() != ""]
 
@@ -81,22 +96,9 @@ def setup_custom_election():
             flash("Please enter at least one candidate.", "error")
             return redirect(url_for("admin.setup_custom_election"))
 
-        # Parse dates if provided
-        start_date = None
-        end_date = None
-        try:
-            if start_date_str and start_date_str != "No range":
-                start_date = datetime.strptime(start_date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
-            if end_date_str and end_date_str != "No range":
-                end_date = datetime.strptime(end_date_str, '%Y-%m-%dT%H:%M').replace(tzinfo=timezone.utc)
-                
-            # Validate date range if both dates are provided
-            if start_date and end_date and start_date >= end_date:
-                flash("End date must be after start date.", "error")
-                return redirect(url_for("admin.setup_custom_election"))
-                
-        except ValueError:
-            flash("Invalid date format. Please use the date picker.", "error")
+        # Validate date range if both dates are provided
+        if start_date and end_date and start_date >= end_date:
+            flash("End date must be after start date.", "error")
             return redirect(url_for("admin.setup_custom_election"))
 
         election_id = current_app.election_service.start_election(
@@ -108,11 +110,17 @@ def setup_custom_election():
             end_date=end_date
         )
 
-        flash(f"Custom election '{election_name}' started with ID {election_id}.", "info")
+        pacific = ZoneInfo('America/Los_Angeles')
+        if start_date:
+            local_start = start_date.astimezone(pacific)
+            flash(f"Custom election '{election_name}' created and will start at {local_start.strftime('%I:%M %p %Z on %B %d, %Y')}", "info")
+        else:
+            flash(f"Custom election '{election_name}' created successfully.", "info")
+
         return redirect(url_for("election.index"))
         
     return render_template("custom_election.html")
-
+    
 @admin_bp.route("/delete_election/<int:election_id>", methods=["POST"])
 @login_required
 @admin_required

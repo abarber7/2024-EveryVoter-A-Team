@@ -2,6 +2,8 @@
 from extensions import db
 from models.base import TimestampMixin
 from datetime import datetime, timezone
+import pytz
+from zoneinfo import ZoneInfo
 
 
 class Election(db.Model, TimestampMixin):
@@ -44,7 +46,30 @@ class Election(db.Model, TimestampMixin):
             return None
             
         now = datetime.now(timezone.utc)
+        
         if now < self.start_date:
             time_delta = self.start_date - now
-            return round(time_delta.total_seconds() / 3600, 1)  # Convert to hours
+            hours = time_delta.total_seconds() / 3600
+            return round(hours, 1)
+        return None
+
+    def get_local_time(self, dt):
+        """Convert UTC datetime to Pacific Time"""
+        if dt:
+            pacific = ZoneInfo('America/Los_Angeles')
+            return dt.astimezone(pacific)
+        return None
+
+    @property
+    def local_start_date(self):
+        local_time = self.get_local_time(self.start_date)
+        if local_time:
+            return local_time.strftime('%I:%M %p %Z on %B %d, %Y')
+        return None
+
+    @property
+    def local_end_date(self):
+        local_time = self.get_local_time(self.end_date)
+        if local_time:
+            return local_time.strftime('%I:%M %p %Z on %B %d, %Y')
         return None
