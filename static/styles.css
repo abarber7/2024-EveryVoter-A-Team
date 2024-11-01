@@ -2,7 +2,7 @@
 body {
     margin: 0;
     padding: 0;
-    background: #0d1b2a; /* Use a simple solid color */
+    background: #0d1b2a;
     color: #fff;
     font-family: 'Arial', sans-serif;
     overflow-x: hidden;
@@ -12,7 +12,7 @@ body {
 
 .container {
     position: relative;
-    z-index: 4; /* Ensures the container is above the background elements */
+    z-index: 4;
 }
 
 /* Stars Background */
@@ -20,15 +20,12 @@ body {
     width: 100%;
     height: 100%;
     background: transparent;
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     overflow: hidden;
-}
-
-/* Shooting Stars */
-.shooting-stars {
-    z-index: 3;
+    z-index: -1;
+    pointer-events: none;
 }
 
 .shooting-star {
@@ -53,6 +50,75 @@ body {
     }
 }
 
+/* Form Styling */
+form {
+    margin-top: 60px;
+    text-align: center;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 20px;
+}
+
+/* Standardized Form Fields */
+input[type="text"],
+input[type="number"],
+input[type="datetime-local"],
+input[type="password"],
+select,
+.form-control {
+    width: 400px;
+    padding: 12px;
+    margin: 10px auto;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    font-size: 16px;
+    display: block;
+    box-sizing: border-box;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="datetime-local"]:focus,
+input[type="password"]:focus,
+select:focus,
+.form-control:focus {
+    outline: none;
+    border-color: #4a9eff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Submit Button */
+input[type="submit"] {
+    width: 400px;
+    padding: 12px 20px;
+    font-size: 18px;
+    background-color: #4a9eff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    margin: 20px auto;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #2486ff;
+}
+
+/* Candidate Container */
+#candidate-container {
+    margin: 20px auto;
+}
+
+#candidate-container input {
+    width: 400px;
+    margin: 10px auto;
+}
+
 /* Button Styling */
 .btn {
     color: #fff;
@@ -71,12 +137,14 @@ body {
     background-color: #28a745;
 }
 
+/* Voice Button */
 #voice-button {
     background-color: #007bff;
     color: white;
     padding: 10px 20px;
     border: none;
     cursor: pointer;
+    border-radius: 8px;
 }
 
 #voice-button:hover {
@@ -86,21 +154,10 @@ body {
 #voice-status {
     margin-top: 10px;
     font-size: 16px;
-    color: #333;
+    color: #a8c7ff;
 }
 
-/* Shooting stars should be behind everything else */
-.shooting-stars {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1; /* This keeps the shooting stars in the background */
-    pointer-events: none; /* Prevent the stars from blocking any interaction */
-}
-
-/* Back button should be in front */
+/* Back Button */
 .back-button {
     position: fixed;
     top: 20px;
@@ -114,58 +171,19 @@ body {
     text-align: center;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    text-decoration: none;
 }
 
 .back-button:hover {
     background-color: #495057;
+    color: white;
 }
 
 .back-button i {
     margin-right: 8px;
 }
 
-.election-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    margin: 0.5rem 0;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    transition: background-color 0.3s ease;
-}
-
-.election-container:hover {
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.election-name {
-    flex: 1;
-}
-
-.election-timing {
-    margin-left: 1rem;
-    text-align: right;
-    font-size: 0.9em;
-    color: #a8c7ff;
-}
-
-.time-indicator {
-    display: block;
-    font-weight: bold;
-}
-
-.exact-time {
-    display: block;
-    font-size: 0.85em;
-    color: #8ba8db;
-    margin-top: 0.2rem;
-}
-
-.admin-controls {
-    margin-left: 1rem;
-}
-
+/* Election Dashboard */
 .election-dashboard {
     max-width: 1200px;
     margin: 0 auto;
@@ -184,39 +202,7 @@ body {
     color: #fff;
 }
 
-.welcome-message {
-    font-size: 1.1rem;
-    margin-bottom: 2rem;
-}
-
-.auth-link {
-    color: #4a9eff;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.auth-link:hover {
-    color: #2486ff;
-}
-
-.elections-container {
-    margin-bottom: 3rem;
-}
-
-.elections-container h2 {
-    text-align: center;
-    margin-bottom: 2rem;
-    color: #fff;
-}
-
-.election-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    max-width: 800px;
-    margin: 0 auto;
-}
-
+/* Election Cards */
 .election-card {
     display: flex;
     align-items: center;
@@ -225,6 +211,7 @@ body {
     border-radius: 12px;
     padding: 1.5rem;
     transition: background-color 0.3s ease;
+    margin-bottom: 1rem;
 }
 
 .election-card:hover {
@@ -286,13 +273,20 @@ body {
     background-color: #c82333;
 }
 
-.no-elections {
-    text-align: center;
-    color: #a8c7ff;
-    font-size: 1.1rem;
-    padding: 2rem;
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+    text-align: left;
 }
 
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #fff;
+    font-size: 16px;
+}
+
+/* Admin Actions */
 .admin-actions {
     display: flex;
     justify-content: center;
@@ -311,4 +305,33 @@ body {
 
 .action-button:hover {
     background-color: #2486ff;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    input[type="text"],
+    input[type="number"],
+    input[type="datetime-local"],
+    input[type="password"],
+    select,
+    .form-control,
+    input[type="submit"],
+    #candidate-container input {
+        width: 100%;
+        max-width: 400px;
+    }
+    
+    form {
+        padding: 0 15px;
+    }
+
+    .election-card {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .admin-controls {
+        margin-left: 0;
+        margin-top: 1rem;
+    }
 }
