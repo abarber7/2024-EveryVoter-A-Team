@@ -50,6 +50,35 @@ body {
     }
 }
 
+.admin-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.action-button {
+    background-color: #4a9eff;
+    color: white;
+    text-decoration: none;
+    padding: 12px 30px;
+    border-radius: 8px;
+    transition: background-color 0.3s ease;
+    font-size: 16px;
+    min-width: 200px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.action-button:hover {
+    background-color: #2486ff;
+    color: white;
+    text-decoration: none;
+}
+
 /* Main Container for Forms */
 .form-container {
     max-width: 500px;
