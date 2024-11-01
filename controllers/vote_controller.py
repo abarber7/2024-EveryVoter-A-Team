@@ -5,6 +5,7 @@ from extensions import db
 import difflib
 from io import BytesIO
 from flask import current_app
+from datetime import datetime, timezone
 
 vote_bp = Blueprint('vote', __name__)
 
@@ -13,12 +14,23 @@ vote_bp = Blueprint('vote', __name__)
 def vote(election_id):
     election = Election.query.get(election_id)
     
-    if not election or not election.is_active:
-        if election and election.time_until_start:
-            flash(f"This election will start in {election.time_until_start} hours.", "info")
-        else:
-            flash("Election not found or has ended.", "error")
+    if not election:
+        flash("Election not found.", "error")
         return redirect(url_for("election.index"))
+
+    if not election.is_active:
+        if election.time_until_start:
+            flash(f"This election will start in {election.time_until_start} hours.", "info")
+            return redirect(url_for("election.index"))
+        elif election.start_date and datetime.now(timezone.utc) < election.start_date:
+            flash("This election has not started yet.", "info")
+            return redirect(url_for("election.index"))
+        elif election.end_date and datetime.now(timezone.utc) > election.end_date:
+            flash("This election has ended.", "info")
+            return redirect(url_for("election.index"))
+        else:
+            flash("This election is not active.", "error")
+            return redirect(url_for("election.index"))
 
     existing_vote = UserVote.query.filter_by(user_id=current_user.id, election_id=election_id).first()
     if existing_vote:
