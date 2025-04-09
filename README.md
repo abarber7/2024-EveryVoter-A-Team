@@ -25,7 +25,7 @@ speak-to-vote functionality.
 EveryVoter implements logic to declare a winner once a candidate reaches the required number of votes before the end of the voting period. This feature allows for quicker determination of election outcomes, improving efficiency.
 
 ---
-
+ 
 EveryVoter is developed with a focus on remote voting for those who cast votes differently.
 
 ## Steps to Run the Application
